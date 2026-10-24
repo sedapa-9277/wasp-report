@@ -4,6 +4,17 @@
 body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,"Malgun Gothic",sans-serif}
 .top{display:flex;justify-content:space-between;align-items:center;padding:10px 16px;background:var(--main);color:#fff}
 .top h1{font-size:18px;margin:0}
+.top{gap:8px;flex-wrap:wrap}
+.hdr-right{display:flex;align-items:center;gap:8px}
+.icon-btn{width:32px;height:32px;border-radius:50%;border:1px solid rgba(255,255,255,.55);background:rgba(255,255,255,.15);color:#fff;font-size:16px;line-height:1;cursor:pointer;padding:0}
+.langset{border:1px solid var(--line);border-radius:8px;margin:10px 0 14px;padding:8px 12px}
+.dialog.help{max-width:520px;max-height:85vh;display:flex;flex-direction:column}
+.dialog.help .btn.main{flex:none;margin-top:12px;width:100%}
+.help-body{overflow-y:auto;font-size:14px;line-height:1.6}
+.help-body h4{margin:14px 0 4px;font-size:15px;color:var(--main)}
+.help-body h4:first-child{margin-top:4px}
+.help-body ul{margin:0;padding-left:20px}
+.help-body li{margin:3px 0}
 .visit{font-size:12px;opacity:.95;display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end}
 .visit b{font-weight:700}
 .tag.both{background:linear-gradient(90deg,var(--warn) 50%,var(--main) 50%)}
