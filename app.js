@@ -486,6 +486,22 @@
   $("dayPick").onchange = (e) => { const tt = ymd(new Date()); setDay(e.target.value > tt ? tt : e.target.value); }; // 지우면 전체, 미래는 오늘로
   $("dayPick").onclick = (e) => { try { e.target.showPicker(); } catch {} }; // 글자 부분을 눌러도 달력이 열리게
 
+  // ---------- 하단 탭 (좁은 화면에서만 보인다. 넓은 화면은 두 칸 배치라 둘 다 보임) ----------
+  function setTab(tab, scroll = true) {
+    document.body.classList.toggle("tab-report", tab === "report");
+    document.body.classList.toggle("tab-list", tab === "list");
+    document.querySelectorAll("#tabbar button").forEach((b) => b.classList.toggle("on", b.dataset.tab === tab));
+    try { sessionStorage.setItem("wasp_tab", tab); } catch {}
+    if (!scroll) return;
+    // 신고하기는 지도부터(위치 지정), 목록은 목록부터 보이게
+    if (tab === "report") window.scrollTo({ top: 0, behavior: "smooth" });
+    else document.querySelector(".list-card").scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+  $("tabbar").onclick = (e) => { const b = e.target.closest("button[data-tab]"); if (b) setTab(b.dataset.tab); };
+  let startTab = "report";
+  try { startTab = sessionStorage.getItem("wasp_tab") || "report"; } catch {}
+  setTab(startTab, false);
+
   // ---------- 전화번호 뒷자리 검색 ----------
   function setSearch(q, reload = true) {
     phoneQ = q;

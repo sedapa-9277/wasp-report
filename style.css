@@ -5,6 +5,23 @@ body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,"Mal
 .top{display:flex;justify-content:space-between;align-items:center;padding:10px 16px;background:var(--main);color:#fff}
 .top h1{font-size:18px;margin:0}
 .top{gap:8px;flex-wrap:wrap}
+/* 상단 메뉴는 스크롤해도 보이게 고정 */
+.top{position:sticky;top:0;z-index:30;box-shadow:0 2px 6px rgba(0,0,0,.25)}
+#map{z-index:0} /* 지도 내부 요소가 고정된 상단 메뉴 위로 올라오지 않도록 쌓임 맥락을 분리 */
+#map,.card,#list{scroll-margin-top:64px} /* 스크롤 이동 시 고정 메뉴에 가리지 않게 */
+
+/* 하단 탭: 좁은 화면(한 칸 배치)에서만 */
+.tabbar{display:none}
+@media(max-width:899px){
+  .tabbar{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:40;background:var(--card);border-top:1px solid var(--line);box-shadow:0 -2px 8px rgba(0,0,0,.2);padding-bottom:env(safe-area-inset-bottom)}
+  .tabbar button{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:7px 0 8px;border:0;background:none;color:var(--mute);font:inherit;font-size:12px;cursor:pointer}
+  .tabbar button .ti{font-size:19px;line-height:1.1;filter:grayscale(1);opacity:.7}
+  .tabbar button.on{color:var(--main);font-weight:700}
+  .tabbar button.on .ti{filter:none;opacity:1}
+  body{padding-bottom:calc(62px + env(safe-area-inset-bottom))}
+  body.tab-report .list-card{display:none}
+  body.tab-list .form-card{display:none}
+}
 .hdr-right{display:flex;align-items:center;gap:8px}
 .icon-btn{width:32px;height:32px;border-radius:50%;border:1px solid rgba(255,255,255,.55);background:rgba(255,255,255,.15);color:#fff;font-size:16px;line-height:1;cursor:pointer;padding:0}
 .pill-btn{height:32px;padding:0 12px;border-radius:99px;border:1px solid rgba(255,255,255,.7);background:#fff;color:var(--main);font:inherit;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap}

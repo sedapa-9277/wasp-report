@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>말벌 신고</title>
-<link rel="stylesheet" href="style.css?v=29">
+<link rel="stylesheet" href="style.css?v=30">
 </head>
 <body>
 <header class="top">
@@ -93,6 +93,12 @@
 
 <footer class="foot"><div class="visit" id="visit"></div></footer>
 
+<!-- 휴대폰(좁은 화면) 전용 하단 탭: 신고하기 / 신고 목록 -->
+<nav class="tabbar" id="tabbar">
+  <button type="button" data-tab="report"><span class="ti">📝</span><span data-i18n="reportTitle"></span></button>
+  <button type="button" data-tab="list"><span class="ti">📋</span><span data-i18n="listTitle"></span></button>
+</nav>
+
 <!-- 처리완료 입력 -->
 <div id="doneDialogWrap" class="modal" hidden>
   <form id="doneForm" class="dialog">
@@ -163,8 +169,8 @@
   </div>
 </div>
 
-<script src="config.js?v=29"></script>
-<script src="i18n.js?v=29"></script>
-<script src="app.js?v=29"></script>
+<script src="config.js?v=30"></script>
+<script src="i18n.js?v=30"></script>
+<script src="app.js?v=30"></script>
 </body>
 </html>
