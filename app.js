@@ -5,6 +5,7 @@
   // ---------- 언어 (한국어 / English) ----------
   let lang = "ko";
   try { lang = localStorage.getItem("wasp_lang") || "ko"; } catch {}
+  try { localStorage.removeItem("wasp_handler"); } catch {} // 예전 버전이 저장해 둔 담당자 이름을 지운다
   if (!window.I18N[lang]) lang = "ko";
   const t = (key, vars = {}) => {
     const s = window.I18N[lang][key] ?? window.I18N.ko[key] ?? key;
@@ -263,8 +264,9 @@
     el.className = "pop-wrap";
     el.innerHTML = `<div class="pin-pop" style="--pc:${pinColor(r)}">
       <button type="button" class="pop-x" aria-label="${esc(t("close"))}">×</button>
-      <div class="pop-head"><span class="no">${t("reportNo", { n: r.report_no })}</span> <span class="tag ${r.kind}">${kindName(r.kind)}</span> <b>${esc(r.note || t("descNone"))}</b></div>
+      <div class="pop-head"><span class="no">${t("reportNo", { n: r.report_no })}</span> <span class="tag ${r.kind}">${kindName(r.kind)}</span></div>
       <div class="row addr" data-addr="${r.id}">${addrHtml(r)}</div>
+      ${r.note ? `<div class="row note">${esc(t("noteLabel"))}: ${esc(r.note)}</div>` : ""}
       ${extraText(r).map((x) => `<div class="row">${esc(x)}</div>`).join("")}
       <div class="row">${t("pinReport", { t: full(r.created_at) })}</div>
       ${r.reporter_phone4 ? `<div class="row">${t("pinPhone", { p: esc(r.reporter_phone4) })}</div>` : ""}
@@ -353,7 +355,7 @@
   // ---------- 벌 종류 / 개체수 / 벌집 크기 (모두 선택 입력) ----------
   const SPECIES = ["mandarinia", "velutina", "crabro", "simillima", "analis", "polistes", "unknown"]; // 국내에서 많이 신고되는 순서대로 안내서와 같은 6종 + 모르겠음
   const COUNTS = ["le5", "6to10", "ge11"];
-  const SIZES = ["le10", "11to30", "ge31"];
+  const SIZES = ["le20", "21to50", "ge51"];
   const sel = { species: null, count: null, size: null };
   const KINDS = ["sighting", "nest"];
   const selKinds = new Set(); // 구분(필수)은 둘 다 고를 수 있다
@@ -532,7 +534,7 @@
     } else if (b.dataset.act === "done") {
       doneTarget = id;
       $("doneTime").textContent = full(new Date().toISOString());
-      $("handler").value = localStorage.getItem("wasp_handler") || "";
+      $("handler").value = "";
       $("doneDialogWrap").hidden = false; $("handler").focus();
     }
   };
@@ -541,7 +543,6 @@
   $("doneForm").onsubmit = async (e) => {
     e.preventDefault();
     const h = $("handler").value.trim(); if (!h) return;
-    localStorage.setItem("wasp_handler", h);
     try { await Store.complete(doneTarget, h); }
     catch { notify(t("doneFail")); }
     $("doneDialogWrap").hidden = true;
