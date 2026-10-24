@@ -60,7 +60,9 @@ body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,"Mal
 .help-body h4:first-child{margin-top:4px}
 .help-body ul{margin:0;padding-left:20px}
 .help-body li{margin:3px 0}
-.visit{font-size:12px;opacity:.95;display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end}
+.foot{padding:4px 16px 28px;text-align:center}
+.visit{font-size:12px;color:var(--mute);display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+.item .note{font-size:13px;margin-top:3px;word-break:break-all}
 .visit b{font-weight:700}
 .tag.both{background:linear-gradient(90deg,var(--warn) 50%,var(--main) 50%)}
 #map{height:45vh;min-height:260px;position:relative;background:#ddd;grid-area:map;border-radius:12px;overflow:hidden}

@@ -355,11 +355,15 @@
   const COUNTS = ["le5", "6to10", "ge11"];
   const SIZES = ["le10", "11to30", "ge31"];
   const sel = { species: null, count: null, size: null };
+  const KINDS = ["sighting", "nest"];
+  const selKinds = new Set(); // 구분(필수)은 둘 다 고를 수 있다
   const speciesName = (id) => (id === "unknown" ? t("speciesUnknown") : t("waspList").find((w) => w.id === id)?.name || id);
 
   function renderChips() {
     const chips = (group, values, label) => values.map((v) =>
       `<button type="button" class="chip-btn" data-g="${group}" data-v="${v}" aria-pressed="${sel[group] === v}">${esc(label(v))}</button>`).join("");
+    $("chipsKind").innerHTML = KINDS.map((v) =>
+      `<button type="button" class="chip-btn" data-k="${v}" aria-pressed="${selKinds.has(v)}">${esc(t(v === "sighting" ? "kindSighting" : "kindNest"))}</button>`).join("");
     $("chipsSpecies").innerHTML = chips("species", SPECIES, speciesName);
     $("chipsCount").innerHTML = chips("count", COUNTS, (v) => t("count_" + v));
     $("chipsSize").innerHTML = chips("size", SIZES, (v) => t("size_" + v));
@@ -372,14 +376,18 @@
       renderChips();
     };
   }
+  $("chipsKind").onclick = (e) => {
+    const b = e.target.closest("button[data-k]"); if (!b) return;
+    const k = b.dataset.k;
+    if (selKinds.has(k)) selKinds.delete(k); else selKinds.add(k);
+    renderChips(); updateGroups();
+  };
   // 개체수는 '벌 목격', 벌집 크기는 '벌집 위치'를 골랐을 때만 묻는다
-  const checkedKinds = () => [...document.querySelectorAll('input[name="kind"]:checked')].map((c) => c.value);
+  const checkedKinds = () => KINDS.filter((k) => selKinds.has(k));
   function updateGroups() {
-    const k = checkedKinds();
-    $("grpCount").hidden = !k.includes("sighting");
-    $("grpSize").hidden = !k.includes("nest");
+    $("grpCount").hidden = !selKinds.has("sighting");
+    $("grpSize").hidden = !selKinds.has("nest");
   }
-  document.querySelectorAll('input[name="kind"]').forEach((c) => c.addEventListener("change", updateGroups));
   $("seePhotos").onclick = () => { renderInfo(); openModal("infoWrap"); };
 
   const extraText = (r) => [
@@ -410,7 +418,7 @@
     } catch { btn.disabled = false; return notify(t("submitFail")); }
     btn.disabled = false;
     $("form").reset(); clearPhotos();
-    sel.species = sel.count = sel.size = null; renderChips(); updateGroups();
+    sel.species = sel.count = sel.size = null; selKinds.clear(); renderChips(); updateGroups();
     picked = null; renderPos();
     if (pickMarker) { pickMarker.setMap(null); pickMarker = null; }
     if (phoneQ) setSearch("", false);
@@ -430,10 +438,11 @@
       if (d !== cur) { cur = d; html += `<div class="date">${d}</div>`; }
       html += `<div class="item" data-id="${r.id}">
         <div class="head">
-          <span><span class="no">${t("reportNo", { n: r.report_no })}</span> <span class="tag ${r.kind}">${kindName(r.kind)}</span> ${esc(r.note || t("descNone"))}</span>
+          <span><span class="no">${t("reportNo", { n: r.report_no })}</span> <span class="tag ${r.kind}">${kindName(r.kind)}</span></span>
           <span class="tag ${r.done ? "done" : ""}" style="${r.done ? "" : "background:#868e96"}">${t(r.done ? "statusDone" : "statusNew")}</span>
         </div>
         <div class="addr" data-addr="${r.id}">${addrHtml(r)}</div>
+        ${r.note ? `<div class="note">${esc(t("noteLabel"))}: ${esc(r.note)}</div>` : ""}
         <div class="extra">${extraHtml(r)}</div>
         <div class="meta">${t("reportedAt", { t: hm(new Date(r.created_at)) })}${r.reporter_phone4 ? ` · ${t("pinPhone", { p: esc(r.reporter_phone4) })}` : ""}</div>
         ${r.photo_urls?.length ? `<div class="thumbs">${r.photo_urls.map((u) => `<a href="${esc(u)}" class="zoom"><img src="${esc(u)}" alt="${esc(t("photoAlt"))}" loading="lazy"></a>`).join("")}</div>` : ""}
