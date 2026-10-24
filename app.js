@@ -197,7 +197,7 @@
   // 마커를 누르면 해당 신고 내용을 팝업으로 보여준다
   function openInfo(r, marker) {
     if (info) info.close();
-    const imgs = (r.photo_urls || []).map((u) => `<a href="${esc(u)}" target="_blank" rel="noopener"><img src="${esc(u)}" alt="${esc(t("photoAlt"))}"></a>`).join("");
+    const imgs = (r.photo_urls || []).map((u) => `<a href="${esc(u)}" class="zoom"><img src="${esc(u)}" alt="${esc(t("photoAlt"))}"></a>`).join("");
     info = new kakao.maps.InfoWindow({
       removable: true, zIndex: 20,
       content: `<div class="pin-info">
@@ -322,7 +322,7 @@
           <span class="tag ${r.done ? "done" : ""}" style="${r.done ? "" : "background:#868e96"}">${t(r.done ? "statusDone" : "statusNew")}</span>
         </div>
         <div class="meta">${t("reportedAt", { t: hm(new Date(r.created_at)) })}${r.reporter_phone4 ? ` · ${t("pinPhone", { p: esc(r.reporter_phone4) })}` : ""}</div>
-        ${r.photo_urls?.length ? `<div class="thumbs">${r.photo_urls.map((u) => `<a href="${esc(u)}" target="_blank" rel="noopener"><img src="${esc(u)}" alt="${esc(t("photoAlt"))}" loading="lazy"></a>`).join("")}</div>` : ""}
+        ${r.photo_urls?.length ? `<div class="thumbs">${r.photo_urls.map((u) => `<a href="${esc(u)}" class="zoom"><img src="${esc(u)}" alt="${esc(t("photoAlt"))}" loading="lazy"></a>`).join("")}</div>` : ""}
         ${r.done ? `<div class="result">✔ ${t("handlerLbl")} ${esc(r.handler)} · ${full(r.done_at)}</div>` : ""}
         <div class="acts">
           ${map ? `<button class="btn sub" data-act="show">${t("show")}</button>` : ""}
@@ -412,6 +412,30 @@
     $(wrap).onclick = (e) => { if (e.target === $(wrap)) closeModal(wrap); };
   }
   document.addEventListener("keydown", (e) => { if (e.key === "Escape") MODALS.forEach(([wrap]) => closeModal(wrap)); });
+  // ---------- 사진 크게 보기 ----------
+  // 사진 링크를 새 창으로 열면 휴대폰에서 돌아올 때 페이지가 다시 불러와져 지도 위치가 처음으로 돌아간다.
+  // 그래서 같은 화면 위에 확대 창을 띄운다. (휴대폰의 뒤로 가기 버튼은 이 창만 닫는다)
+  let lbOpen = false;
+  function openLightbox(src) {
+    $("lbImg").src = src; $("lightbox").hidden = false;
+    if (!lbOpen) { lbOpen = true; history.pushState({ lb: 1 }, ""); }
+  }
+  function closeLightbox(fromPop) {
+    if (!lbOpen) return;
+    lbOpen = false; $("lightbox").hidden = true; $("lbImg").removeAttribute("src");
+    if (!fromPop && history.state && history.state.lb) history.back();
+  }
+  // 카카오 지도 팝업 안의 링크도 잡기 위해 캡처 단계에서 처리한다
+  document.addEventListener("click", (e) => {
+    const a = e.target.closest && e.target.closest("a.zoom");
+    if (!a) return;
+    e.preventDefault(); e.stopPropagation();
+    openLightbox(a.href);
+  }, true);
+  $("lightbox").onclick = () => closeLightbox();
+  window.addEventListener("popstate", () => closeLightbox(true));
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeLightbox(); });
+
   // 사진은 가이드를 열 때 그린다 (열지 않는 방문자는 사진을 내려받지 않는다)
   $("btnInfo").onclick = () => { renderInfo(); openModal("infoWrap"); };
   $("btnSettings").onclick = () => {
