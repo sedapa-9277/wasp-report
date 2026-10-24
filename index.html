@@ -4,12 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>말벌 신고</title>
-<link rel="stylesheet" href="style.css?v=5">
+<link rel="stylesheet" href="style.css?v=6">
 </head>
 <body>
 <header class="top">
   <h1>🐝 말벌 위치 신고</h1>
-  <span class="visit" id="visit">오늘 방문 -</span>
+  <div class="visit" id="visit"></div>
 </header>
 
 <main class="layout">
@@ -26,8 +26,9 @@
     <form id="form">
       <fieldset>
         <legend>구분 <b class="req">필수</b></legend>
-        <label class="choice"><input type="radio" name="kind" value="sighting"> 벌 목격</label>
-        <label class="choice"><input type="radio" name="kind" value="nest"> 벌집 위치</label>
+        <label class="choice"><input type="checkbox" name="kind" value="sighting"> 벌 목격</label>
+        <label class="choice"><input type="checkbox" name="kind" value="nest"> 벌집 위치</label>
+        <p class="hint" style="margin:4px 0 0">둘 다 해당되면 함께 선택하세요.</p>
       </fieldset>
 
       <label class="field">위치 설명 <small>(선택)</small>
@@ -71,7 +72,7 @@
   </form>
 </div>
 
-<script src="config.js?v=5"></script>
-<script src="app.js?v=5"></script>
+<script src="config.js?v=6"></script>
+<script src="app.js?v=6"></script>
 </body>
 </html>

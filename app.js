@@ -20,6 +20,12 @@
         withCount: true, headers: { Range: `${n * PAGE_SIZE}-${n * PAGE_SIZE + PAGE_SIZE - 1}`, Prefer: "count=exact" },
       });
     },
+    // 조건에 맞는 신고 건수 (본문 없이 개수만 받는다)
+    async count(filter = "") {
+      const res = await fetch(`${CFG.SUPABASE_URL}/rest/v1/wasp_reports?select=id${filter}`, { method: "HEAD", headers: this.h({ Prefer: "count=exact" }) });
+      if (!res.ok) throw new Error("count");
+      return +(res.headers.get("content-range") || "").split("/")[1] || 0;
+    },
     markers() { return this.req("/rest/v1/wasp_reports?select=id,kind,lat,lng,note,done&order=created_at.desc&limit=1000"); },
     async uploadPhoto(blob) {
       const name = `${crypto.randomUUID()}.jpg`;
@@ -50,7 +56,7 @@
   const hm = (d) => `${pad(d.getHours())}:${pad(d.getMinutes())}`;
   const full = (iso) => { const d = new Date(iso); return `${ymd(d)} ${hm(d)}`; };
   const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-  const KIND = { sighting: "벌 목격", nest: "벌집 위치" };
+  const KIND = { sighting: "벌 목격", nest: "벌집 위치", both: "목격+벌집" };
   const PAGE_SIZE = 10;
 
   // ---------- 상태 ----------
@@ -59,7 +65,13 @@
   let rows = [], pins = [], total = 0, pageNo = 0;
   const markers = {};
 
-  Store.visit().then((n) => { $("visit").textContent = `오늘 방문 ${n}명`; }).catch(() => { $("visit").textContent = ""; });
+  // ---------- 상단 현황 (방문 / 신고 / 처리완료) ----------
+  const stats = { visit: null, reports: null, done: null };
+  function renderStats() {
+    const part = (label, v, unit) => (v == null ? "" : `<span>${label} <b>${v}</b>${unit}</span>`);
+    $("visit").innerHTML = part("오늘 방문", stats.visit, "명") + part("신고", stats.reports, "건") + part("처리완료", stats.done, "건");
+  }
+  Store.visit().then((n) => { stats.visit = n; renderStats(); }).catch(() => {});
 
   // ---------- 지도 ----------
   function loadMap() {
@@ -103,7 +115,7 @@
     if (!map) return;
     Object.values(markers).forEach((m) => m.setMap(null));
     pins.forEach((r) => {
-      const color = r.done ? "#2b8a3e" : r.kind === "nest" ? "#d9480f" : "#e67700";
+      const color = r.done ? "#2b8a3e" : r.kind !== "sighting" ? "#d9480f" : "#e67700";
       markers[r.id] = new kakao.maps.Marker({ position: new kakao.maps.LatLng(r.lat, r.lng), map, image: markerImage(color), title: `${KIND[r.kind]} ${r.note || ""}` });
     });
   }
@@ -111,7 +123,8 @@
   // n: 이동할 페이지(0부터). 생략하면 현재 페이지를 다시 불러온다.
   async function refresh(n = pageNo) {
     try {
-      const [p, m] = await Promise.all([Store.page(n), Store.markers()]);
+      const [p, m, done] = await Promise.all([Store.page(n), Store.markers(), Store.count("&done=eq.true")]);
+      stats.reports = p.total; stats.done = done; renderStats();
       // 마지막 페이지의 항목이 모두 사라진 경우(예: 삭제) 한 페이지 앞으로
       if (!p.data.length && n > 0 && p.total) return refresh(Math.ceil(p.total / PAGE_SIZE) - 1);
       rows = p.data; total = p.total; pins = m; pageNo = n;
@@ -177,15 +190,16 @@
   // ---------- 신고 ----------
   $("form").onsubmit = async (e) => {
     e.preventDefault();
-    const kind = document.querySelector('input[name="kind"]:checked');
+    const checked = [...document.querySelectorAll('input[name="kind"]:checked')].map((c) => c.value);
+    const kind = checked.length === 2 ? "both" : checked[0];
     if (!picked) return alert("위치를 지정해 주세요. (지도를 누르거나 '현위치 사용')");
-    if (!kind) return alert("벌 목격인지 벌집 위치인지 선택해 주세요.");
+    if (!kind) return alert("벌 목격, 벌집 위치 중 하나 이상 선택해 주세요.");
     const phone4 = $("phone4").value.trim();
     if (phone4 && !/^\d{4}$/.test(phone4)) return alert("전화번호 뒷자리는 숫자 4자리로 입력해 주세요.");
     const btn = e.submitter; btn.disabled = true;
     try {
       const photo_urls = await Promise.all(photos.map((p) => Store.uploadPhoto(p.blob)));
-      await Store.add({ kind: kind.value, lat: picked.lat, lng: picked.lng, note: $("note").value.trim() || null, photo_urls, reporter_phone4: phone4 || null });
+      await Store.add({ kind, lat: picked.lat, lng: picked.lng, note: $("note").value.trim() || null, photo_urls, reporter_phone4: phone4 || null });
     } catch { btn.disabled = false; return alert("신고 접수에 실패했습니다. 네트워크를 확인하고 다시 시도해 주세요."); }
     btn.disabled = false;
     $("form").reset(); clearPhotos();

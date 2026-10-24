@@ -4,7 +4,9 @@
 body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,"Malgun Gothic",sans-serif}
 .top{display:flex;justify-content:space-between;align-items:center;padding:10px 16px;background:var(--main);color:#fff}
 .top h1{font-size:18px;margin:0}
-.visit{font-size:12px;opacity:.9}
+.visit{font-size:12px;opacity:.95;display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end}
+.visit b{font-weight:700}
+.tag.both{background:linear-gradient(90deg,var(--warn) 50%,var(--main) 50%)}
 #map{height:45vh;min-height:260px;position:relative;background:#ddd;grid-area:map;border-radius:12px;overflow:hidden}
 .map-msg{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:16px;color:#555;z-index:1}
 .map-msg[hidden]{display:none}
