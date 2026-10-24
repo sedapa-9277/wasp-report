@@ -401,7 +401,8 @@
     $(wrap).onclick = (e) => { if (e.target === $(wrap)) closeModal(wrap); };
   }
   document.addEventListener("keydown", (e) => { if (e.key === "Escape") MODALS.forEach(([wrap]) => closeModal(wrap)); });
-  $("btnInfo").onclick = () => openModal("infoWrap");
+  // 사진은 가이드를 열 때 그린다 (열지 않는 방문자는 사진을 내려받지 않는다)
+  $("btnInfo").onclick = () => { renderInfo(); openModal("infoWrap"); };
   $("btnSettings").onclick = () => {
     document.querySelector(`input[name="lang"][value="${lang}"]`).checked = true;
     openModal("settingsWrap");
@@ -429,7 +430,7 @@
     const list = (s) => `<${s.ordered ? "ol" : "ul"}>${s.p.map((x) => `<li>${esc(x)}</li>`).join("")}</${s.ordered ? "ol" : "ul"}>`;
     const wasps = () => t("waspList").map((w) => {
       const im = WASP_IMG[w.id];
-      return `<div class="wasp"><div class="ph"><img src="${im.src}" alt="${esc(w.name)}" loading="lazy" onerror="this.style.visibility='hidden'">
+      return `<div class="wasp"><div class="ph"><img src="${im.src}" alt="${esc(w.name)}" onerror="this.style.visibility='hidden'">
         <small><a href="https://commons.wikimedia.org/wiki/File:${im.file}" target="_blank" rel="noopener">${esc(t("photoCredit"))}: ${esc(im.by)} · ${im.lic}</a></small></div>
         <div class="tx"><b>${esc(w.name)}</b> <i>${esc(w.sci)}</i><p>${esc(w.desc)}</p></div></div>`;
     }).join("");
@@ -447,7 +448,7 @@
     document.querySelectorAll("[data-i18n-ph]").forEach((el) => { el.placeholder = t(el.dataset.i18nPh); });
     document.querySelectorAll("[data-i18n-aria]").forEach((el) => { el.setAttribute("aria-label", t(el.dataset.i18nAria)); });
     if (mapMsgKey) $("mapMsg").innerHTML = t(mapMsgKey);
-    renderPos(); renderStats(); renderPhotos(); renderHelp(); renderInfo();
+    renderPos(); renderStats(); renderPhotos(); renderHelp(); if (!$("infoWrap").hidden) renderInfo();
     setDay(day, false); renderList(); renderMarkers();
   }
 
