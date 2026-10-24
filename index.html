@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>말벌 신고</title>
-<link rel="stylesheet" href="style.css?v=9">
+<link rel="stylesheet" href="style.css?v=10">
 </head>
 <body>
 <header class="top">
@@ -58,8 +58,10 @@
       <button type="button" id="dayPrev" class="nav" aria-label="어제">‹</button>
       <label class="daylabel"><span id="dayText"></span><input type="date" id="dayPick" aria-label="날짜 선택"></label>
       <button type="button" id="dayNext" class="nav" aria-label="내일">›</button>
-      <button type="button" id="dayToday" class="pill" data-day="today">오늘</button>
-      <button type="button" id="dayAll" class="pill" data-day="all">전체</button>
+      <span class="pills">
+        <button type="button" id="dayToday" class="pill" data-day="today">오늘</button>
+        <button type="button" id="dayAll" class="pill" data-day="all">전체</button>
+      </span>
     </div>
     <div id="list"></div>
     <nav id="pager" class="pager" aria-label="페이지 이동"></nav>
@@ -80,7 +82,7 @@
   </form>
 </div>
 
-<script src="config.js?v=9"></script>
-<script src="app.js?v=9"></script>
+<script src="config.js?v=10"></script>
+<script src="app.js?v=10"></script>
 </body>
 </html>
