@@ -8,6 +8,14 @@ body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,"Mal
 .hdr-right{display:flex;align-items:center;gap:8px}
 .icon-btn{width:32px;height:32px;border-radius:50%;border:1px solid rgba(255,255,255,.55);background:rgba(255,255,255,.15);color:#fff;font-size:16px;line-height:1;cursor:pointer;padding:0}
 .pill-btn{height:32px;padding:0 12px;border-radius:99px;border:1px solid rgba(255,255,255,.7);background:#fff;color:var(--main);font:inherit;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.chip-btn{border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:99px;padding:7px 12px;font:inherit;font-size:13px;cursor:pointer}
+.chip-btn[aria-pressed="true"]{background:var(--main);border-color:var(--main);color:#fff;font-weight:600}
+#seePhotos{padding:6px 2px 0;font-size:12px}
+.field[hidden]{display:none}
+.item .extra{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}
+.item .extra:empty{display:none}
+.xt{font-size:11px;padding:2px 8px;border-radius:99px;background:var(--bg);border:1px solid var(--line);color:var(--ink)}
 .no{display:inline-block;margin-right:2px;font-size:12px;font-weight:700;color:var(--main)}
 .pin-pop .no{color:var(--pc,#d9480f)}
 .map-filter{position:absolute;top:8px;left:8px;z-index:20;display:flex;border-radius:10px;overflow:hidden;box-shadow:0 1px 6px rgba(0,0,0,.4);border:1px solid #cfcfcf;background:#fff}

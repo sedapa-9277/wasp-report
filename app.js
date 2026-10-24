@@ -22,7 +22,7 @@
       if (!opt.withCount) return data;
       return { data, total: +(res.headers.get("content-range") || "").split("/")[1] || 0 };
     },
-    COLS: "id,report_no,kind,lat,lng,note,photo_urls,created_at,done,handler,done_at,reporter_phone4,address",
+    COLS: "id,report_no,kind,lat,lng,note,photo_urls,created_at,done,handler,done_at,reporter_phone4,address,wasp_species,wasp_count,nest_size",
     // day: 'YYYY-MM-DD'(브라우저 현지 시간 기준 하루). 비우면 전체
     dayFilter(day) {
       if (!day) return "";
@@ -42,7 +42,7 @@
       return +(res.headers.get("content-range") || "").split("/")[1] || 0;
     },
     // 마커용. reporter_phone4(전화번호 뒷자리)는 마커 표시를 위해 공개 조회를 허용해 둔 컬럼이다.
-    markers() { return this.req("/rest/v1/wasp_reports?select=id,report_no,kind,lat,lng,note,done,created_at,done_at,handler,photo_urls,reporter_phone4,address&order=created_at.desc&limit=1000"); },
+    markers() { return this.req("/rest/v1/wasp_reports?select=id,report_no,kind,lat,lng,note,done,created_at,done_at,handler,photo_urls,reporter_phone4,address,wasp_species,wasp_count,nest_size&order=created_at.desc&limit=1000"); },
     async uploadPhoto(blob) {
       const name = `${crypto.randomUUID()}.jpg`;
       await this.req(`/storage/v1/object/wasp-photos/${name}`, { method: "POST", headers: { "Content-Type": "image/jpeg" }, body: blob });
@@ -262,6 +262,7 @@
       <button type="button" class="pop-x" aria-label="${esc(t("close"))}">×</button>
       <div class="pop-head"><span class="no">${t("reportNo", { n: r.report_no })}</span> <span class="tag ${r.kind}">${kindName(r.kind)}</span> <b>${esc(r.note || t("descNone"))}</b></div>
       <div class="row addr" data-addr="${r.id}">${addrHtml(r)}</div>
+      ${extraText(r).map((x) => `<div class="row">${esc(x)}</div>`).join("")}
       <div class="row">${t("pinReport", { t: full(r.created_at) })}</div>
       ${r.reporter_phone4 ? `<div class="row">${t("pinPhone", { p: esc(r.reporter_phone4) })}</div>` : ""}
       ${r.done ? `<div class="row ok">${t("pinDone", { t: full(r.done_at) })}<br>${t("handlerLbl")} ${esc(r.handler || "-")}</div>` : `<div class="row">${t("pinPending")}</div>`}
@@ -346,11 +347,50 @@
     const [p] = photos.splice(+b.dataset.i, 1); URL.revokeObjectURL(p.url); renderPhotos();
   };
 
+  // ---------- 벌 종류 / 개체수 / 벌집 크기 (모두 선택 입력) ----------
+  const SPECIES = ["mandarinia", "velutina", "crabro", "simillima", "analis", "polistes", "unknown"]; // 국내에서 많이 신고되는 순서대로 안내서와 같은 6종 + 모르겠음
+  const COUNTS = ["le5", "6to10", "ge11"];
+  const SIZES = ["le10", "11to30", "ge31"];
+  const sel = { species: null, count: null, size: null };
+  const speciesName = (id) => (id === "unknown" ? t("speciesUnknown") : t("waspList").find((w) => w.id === id)?.name || id);
+
+  function renderChips() {
+    const chips = (group, values, label) => values.map((v) =>
+      `<button type="button" class="chip-btn" data-g="${group}" data-v="${v}" aria-pressed="${sel[group] === v}">${esc(label(v))}</button>`).join("");
+    $("chipsSpecies").innerHTML = chips("species", SPECIES, speciesName);
+    $("chipsCount").innerHTML = chips("count", COUNTS, (v) => t("count_" + v));
+    $("chipsSize").innerHTML = chips("size", SIZES, (v) => t("size_" + v));
+  }
+  // 칩을 다시 누르면 선택이 풀린다(선택 입력이므로)
+  for (const id of ["chipsSpecies", "chipsCount", "chipsSize"]) {
+    $(id).onclick = (e) => {
+      const b = e.target.closest("button[data-g]"); if (!b) return;
+      sel[b.dataset.g] = sel[b.dataset.g] === b.dataset.v ? null : b.dataset.v;
+      renderChips();
+    };
+  }
+  // 개체수는 '벌 목격', 벌집 크기는 '벌집 위치'를 골랐을 때만 묻는다
+  const checkedKinds = () => [...document.querySelectorAll('input[name="kind"]:checked')].map((c) => c.value);
+  function updateGroups() {
+    const k = checkedKinds();
+    $("grpCount").hidden = !k.includes("sighting");
+    $("grpSize").hidden = !k.includes("nest");
+  }
+  document.querySelectorAll('input[name="kind"]').forEach((c) => c.addEventListener("change", updateGroups));
+  $("seePhotos").onclick = () => { renderInfo(); openModal("infoWrap"); };
+
+  const extraText = (r) => [
+    r.wasp_species && `${t("speciesLabel")}: ${speciesName(r.wasp_species)}`,
+    r.wasp_count && t("pinCount", { v: t("count_" + r.wasp_count) }),
+    r.nest_size && t("pinSize", { v: t("size_" + r.nest_size) }),
+  ].filter(Boolean);
+  const extraHtml = (r) => extraText(r).map((x) => `<span class="xt">${esc(x)}</span>`).join("");
+
   // ---------- 신고 ----------
   $("phone4").oninput = (e) => { e.target.value = e.target.value.replace(/\D/g, "").slice(0, 4); }; // 숫자만
   $("form").onsubmit = async (e) => {
     e.preventDefault();
-    const checked = [...document.querySelectorAll('input[name="kind"]:checked')].map((c) => c.value);
+    const checked = checkedKinds();
     const kind = checked.length === 2 ? "both" : checked[0];
     if (!picked) return notify(t("needPos"));
     if (!kind) return notify(t("needKind"));
@@ -360,10 +400,14 @@
     try {
       const photo_urls = await Promise.all(photos.map((p) => Store.uploadPhoto(p.blob)));
       const address = await geocode(picked.lat, picked.lng); // 시·구·동. 구하지 못해도 신고는 접수된다
-      await Store.add({ kind, lat: picked.lat, lng: picked.lng, note: $("note").value.trim() || null, photo_urls, reporter_phone4: phone4, address });
+      await Store.add({ kind, lat: picked.lat, lng: picked.lng, note: $("note").value.trim() || null, photo_urls, reporter_phone4: phone4, address,
+        wasp_species: sel.species,
+        wasp_count: checked.includes("sighting") ? sel.count : null, // 안 묻는 항목은 보내지 않는다
+        nest_size: checked.includes("nest") ? sel.size : null });
     } catch { btn.disabled = false; return notify(t("submitFail")); }
     btn.disabled = false;
     $("form").reset(); clearPhotos();
+    sel.species = sel.count = sel.size = null; renderChips(); updateGroups();
     picked = null; renderPos();
     if (pickMarker) { pickMarker.setMap(null); pickMarker = null; }
     if (day) setDay(ymd(new Date()), false); // 새 신고가 보이도록 오늘로 이동
@@ -386,6 +430,7 @@
           <span class="tag ${r.done ? "done" : ""}" style="${r.done ? "" : "background:#868e96"}">${t(r.done ? "statusDone" : "statusNew")}</span>
         </div>
         <div class="addr" data-addr="${r.id}">${addrHtml(r)}</div>
+        <div class="extra">${extraHtml(r)}</div>
         <div class="meta">${t("reportedAt", { t: hm(new Date(r.created_at)) })}${r.reporter_phone4 ? ` · ${t("pinPhone", { p: esc(r.reporter_phone4) })}` : ""}</div>
         ${r.photo_urls?.length ? `<div class="thumbs">${r.photo_urls.map((u) => `<a href="${esc(u)}" class="zoom"><img src="${esc(u)}" alt="${esc(t("photoAlt"))}" loading="lazy"></a>`).join("")}</div>` : ""}
         ${r.done ? `<div class="result">✔ ${t("handlerLbl")} ${esc(r.handler)} · ${full(r.done_at)}</div>` : ""}
@@ -555,7 +600,7 @@
     document.querySelectorAll("[data-i18n-ph]").forEach((el) => { el.placeholder = t(el.dataset.i18nPh); });
     document.querySelectorAll("[data-i18n-aria]").forEach((el) => { el.setAttribute("aria-label", t(el.dataset.i18nAria)); });
     if (mapMsgKey) $("mapMsg").innerHTML = t(mapMsgKey);
-    renderPos(); renderStats(); renderPhotos(); renderHelp(); if (!$("infoWrap").hidden) renderInfo();
+    renderPos(); renderStats(); renderPhotos(); renderChips(); renderHelp(); if (!$("infoWrap").hidden) renderInfo();
     setDay(day, false); renderList(); renderMarkers();
   }
 
