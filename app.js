@@ -68,6 +68,25 @@
   const hm = (d) => `${pad(d.getHours())}:${pad(d.getMinutes())}`;
   const full = (iso) => { const d = new Date(iso); return `${ymd(d)} ${hm(d)}`; };
   const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  // 브라우저 기본 alert/confirm은 맨 위에 사이트 주소가 붙으므로 화면 안의 안내창을 쓴다
+  function dialog(msg, withCancel) {
+    return new Promise((resolve) => {
+      const wrap = $("msgWrap"), ok = $("msgOk"), cancel = $("msgCancel");
+      $("msgText").textContent = msg; cancel.hidden = !withCancel; wrap.hidden = false; ok.focus();
+      const close = (v) => {
+        wrap.hidden = true; ok.onclick = cancel.onclick = wrap.onclick = null;
+        document.removeEventListener("keydown", onKey); resolve(v);
+      };
+      const onKey = (e) => { if (e.key === "Escape") close(false); };
+      document.addEventListener("keydown", onKey);
+      ok.onclick = () => close(true);
+      cancel.onclick = () => close(false);
+      wrap.onclick = (e) => { if (e.target === wrap) close(false); };
+    });
+  }
+  const notify = (msg) => dialog(msg, false);
+  const ask = (msg) => dialog(msg, true);
+
   const KIND = { sighting: "벌 목격", nest: "벌집 위치", both: "목격+벌집" };
   const PAGE_SIZE = 10;
 
@@ -159,11 +178,11 @@
 
   // ---------- 현위치 ----------
   $("btnLocate").onclick = () => {
-    if (!navigator.geolocation) return alert("이 기기에서는 위치 기능을 사용할 수 없습니다.");
+    if (!navigator.geolocation) return notify("이 기기에서는 위치 기능을 사용할 수 없습니다.");
     $("posText").textContent = "위치 확인 중…";
     navigator.geolocation.getCurrentPosition(
       (p) => setPick(p.coords.latitude, p.coords.longitude, true),
-      () => { $("posText").textContent = "위치 미선택"; alert("현재 위치를 가져오지 못했습니다. 위치 권한을 확인하거나 지도를 눌러 지정하세요."); },
+      () => { $("posText").textContent = "위치 미선택"; notify("현재 위치를 가져오지 못했습니다. 위치 권한을 확인하거나 지도를 눌러 지정하세요."); },
       { enableHighAccuracy: true, timeout: 10000 }
     );
   };
@@ -187,10 +206,10 @@
 
   async function addPhotos(files) {
     const room = MAX_PHOTOS - photos.length;
-    if (files.length > room) alert(`사진은 최대 ${MAX_PHOTOS}장까지 등록할 수 있습니다.`);
+    if (files.length > room) notify(`사진은 최대 ${MAX_PHOTOS}장까지 등록할 수 있습니다.`);
     for (const f of files.slice(0, Math.max(room, 0))) {
       try { const blob = await shrink(f); photos.push({ blob, url: URL.createObjectURL(blob) }); }
-      catch { alert("사진을 불러오지 못했습니다."); }
+      catch { notify("사진을 불러오지 못했습니다."); }
     }
     renderPhotos();
   }
@@ -217,22 +236,22 @@
     e.preventDefault();
     const checked = [...document.querySelectorAll('input[name="kind"]:checked')].map((c) => c.value);
     const kind = checked.length === 2 ? "both" : checked[0];
-    if (!picked) return alert("위치를 지정해 주세요. (지도를 누르거나 '현위치 사용')");
-    if (!kind) return alert("벌 목격, 벌집 위치 중 하나 이상 선택해 주세요.");
+    if (!picked) return notify("위치를 지정해 주세요. (지도를 누르거나 '현위치 사용')");
+    if (!kind) return notify("벌 목격, 벌집 위치 중 하나 이상 선택해 주세요.");
     const phone4 = $("phone4").value.trim();
-    if (phone4 && !/^\d{4}$/.test(phone4)) return alert("전화번호 뒷자리는 숫자 4자리로 입력해 주세요.");
+    if (phone4 && !/^\d{4}$/.test(phone4)) return notify("전화번호 뒷자리는 숫자 4자리로 입력해 주세요.");
     const btn = e.submitter; btn.disabled = true;
     try {
       const photo_urls = await Promise.all(photos.map((p) => Store.uploadPhoto(p.blob)));
       await Store.add({ kind, lat: picked.lat, lng: picked.lng, note: $("note").value.trim() || null, photo_urls, reporter_phone4: phone4 || null });
-    } catch { btn.disabled = false; return alert("신고 접수에 실패했습니다. 네트워크를 확인하고 다시 시도해 주세요."); }
+    } catch { btn.disabled = false; return notify("신고 접수에 실패했습니다. 네트워크를 확인하고 다시 시도해 주세요."); }
     btn.disabled = false;
     $("form").reset(); clearPhotos();
     picked = null; $("posText").textContent = "위치 미선택";
     if (pickMarker) { pickMarker.setMap(null); pickMarker = null; }
     if (day) setDay(ymd(new Date()), false); // 새 신고가 보이도록 오늘로 이동
     await refresh(0); // 새 신고는 첫 페이지 맨 위에 나온다
-    alert("신고가 접수되었습니다.");
+    notify("신고가 접수되었습니다.");
   };
 
   // ---------- 목록 (날짜별) ----------
@@ -307,8 +326,8 @@
     const id = b.closest(".item").dataset.id;
     const r = rows.find((x) => x.id === id);
     if (b.dataset.act === "del") {
-      if (!confirm("이 신고를 삭제할까요? 삭제하면 되돌릴 수 없습니다.")) return;
-      try { await Store.remove(id); } catch { return alert("삭제하지 못했습니다. 잠시 후 다시 시도해 주세요."); }
+      if (!(await ask("이 신고를 삭제할까요? 삭제하면 되돌릴 수 없습니다."))) return;
+      try { await Store.remove(id); } catch { return notify("삭제하지 못했습니다. 잠시 후 다시 시도해 주세요."); }
       await refresh();
     } else if (b.dataset.act === "show" && map) {
       map.setCenter(new kakao.maps.LatLng(r.lat, r.lng)); map.setLevel(3);
@@ -327,7 +346,7 @@
     const h = $("handler").value.trim(); if (!h) return;
     localStorage.setItem("wasp_handler", h);
     try { await Store.complete(doneTarget, h); }
-    catch { alert("처리 완료 저장에 실패했습니다. 이미 처리된 신고일 수 있습니다."); }
+    catch { notify("처리 완료 저장에 실패했습니다. 이미 처리된 신고일 수 있습니다."); }
     $("doneDialogWrap").hidden = true;
     await refresh();
   };

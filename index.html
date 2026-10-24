@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>말벌 신고</title>
-<link rel="stylesheet" href="style.css?v=10">
+<link rel="stylesheet" href="style.css?v=11">
 </head>
 <body>
 <header class="top">
@@ -82,7 +82,17 @@
   </form>
 </div>
 
-<script src="config.js?v=10"></script>
-<script src="app.js?v=10"></script>
+<div id="msgWrap" class="modal" hidden>
+  <div class="dialog" role="alertdialog" aria-modal="true" aria-describedby="msgText">
+    <p id="msgText" class="msg"></p>
+    <div class="row">
+      <button type="button" id="msgCancel" class="btn sub" hidden>취소</button>
+      <button type="button" id="msgOk" class="btn main">확인</button>
+    </div>
+  </div>
+</div>
+
+<script src="config.js?v=11"></script>
+<script src="app.js?v=11"></script>
 </body>
 </html>
