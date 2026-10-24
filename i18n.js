@@ -108,7 +108,7 @@ window.I18N = {
         "위치 설명(전신주 번호, 건물명 등)과 사진은 선택입니다. 사진은 촬영하거나 사진첩에서 최대 3장까지 올릴 수 있고, 자동으로 줄여서 올라가며 30일 뒤 자동 삭제됩니다.",
         "‘신고 접수’를 누르면 끝납니다." ] },
       { h: "2. 지도 보기", p: [
-        "마커 색: 주황 = 벌 목격, 빨강 = 벌집(또는 목격+벌집), 초록 = 처리완료.",
+        "마커 색: 노랑 = 벌 목격, 빨강 = 벌집(또는 목격+벌집), 초록 = 처리완료.",
         "마커 옆 글자는 신고 시각과 전화번호 뒷자리이고, 처리된 신고는 완료 시각도 함께 나옵니다.",
         "마커를 누르면 신고 내용, 처리 정보, 사진을 팝업으로 볼 수 있습니다.",
         "지도 왼쪽 위의 ‘전체 / 처리 대기 / 처리 완료’ 버튼으로 보고 싶은 신고만 지도에 표시할 수 있습니다.",
@@ -240,7 +240,7 @@ window.I18N = {
         "Location details (utility pole number, building name, etc.) and photos are optional. Take or pick up to 3 photos; they are shrunk automatically and deleted after 30 days.",
         "Press “Submit report” to finish." ] },
       { h: "2. Using the map", p: [
-        "Marker colors: orange = sighting, red = nest (or sighting + nest), green = resolved.",
+        "Marker colors: yellow = sighting, red = nest (or sighting + nest), green = resolved.",
         "The text beside a marker shows the report time and the phone last 4 digits; resolved reports also show the resolved time.",
         "Tap a marker to see the report, handling details and photos in a popup.",
         "Use the “All / Pending / Resolved” buttons at the top left of the map to show only the reports you want.",

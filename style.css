@@ -1,4 +1,4 @@
-:root{--bg:#f6f4ee;--card:#fff;--ink:#222;--mute:#777;--line:#e4e0d4;--main:#d9480f;--ok:#2b8a3e;--warn:#e67700}
+:root{--bg:#f6f4ee;--card:#fff;--ink:#222;--mute:#777;--line:#e4e0d4;--main:#d9480f;--ok:#2b8a3e;--warn:#e67700;--sight:#f5c400}
 @media(prefers-color-scheme:dark){:root{--bg:#161512;--card:#211f1b;--ink:#eee;--mute:#999;--line:#38352e}}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,"Malgun Gothic",sans-serif}
@@ -91,7 +91,9 @@ body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,"Mal
 .visit{font-size:12px;color:var(--mute);display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
 .item .note{font-size:13px;margin-top:3px;word-break:break-all}
 .visit b{font-weight:700}
-.tag.both{background:linear-gradient(90deg,var(--warn) 50%,var(--main) 50%)}
+/* 벌 목격 = 노랑(벌집 빨강과 구분), 노란 바탕에는 진한 글씨 */
+.tag.sighting{background:var(--sight);color:#3a2c00}
+.tag.both{background:linear-gradient(90deg,var(--sight) 50%,var(--main) 50%);text-shadow:0 0 2px rgba(0,0,0,.7),0 0 1px rgba(0,0,0,.9)}
 #map{height:45vh;min-height:260px;position:relative;background:#ddd;grid-area:map;border-radius:12px;overflow:hidden}
 .map-msg{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:16px;color:#555;z-index:1}
 .map-msg[hidden]{display:none}

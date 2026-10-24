@@ -186,7 +186,8 @@
   }
 
   function markerImage(color) {
-    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="26" height="26"><circle cx="13" cy="13" r="10" fill="${color}" stroke="#fff" stroke-width="3"/></svg>`;
+    // 흰 테두리 바깥에 가는 진한 테두리를 둘러 밝은 지도에서도(특히 노란 마커) 잘 보이게 한다
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="26" height="26"><circle cx="13" cy="13" r="10" fill="${color}" stroke="#fff" stroke-width="3"/><circle cx="13" cy="13" r="12" fill="none" stroke="rgba(0,0,0,.45)" stroke-width="1"/></svg>`;
     // 원의 중심이 좌표에 오도록 기준점을 이미지 가운데로 둔다
     return new kakao.maps.MarkerImage("data:image/svg+xml," + encodeURIComponent(svg), new kakao.maps.Size(26, 26), { offset: new kakao.maps.Point(13, 13) });
   }
@@ -223,7 +224,8 @@
     closeInfo(); // 목록이 갱신되면 열려 있던 팝업은 닫는다
   }
 
-  const pinColor = (r) => (r.done ? "#2b8a3e" : r.kind !== "sighting" ? "#d9480f" : "#e67700");
+  // 처리완료 초록 / 벌집(목격+벌집 포함) 빨강 / 벌 목격 노랑
+  const pinColor = (r) => (r.done ? "#2b8a3e" : r.kind !== "sighting" ? "#d9480f" : "#f5c400");
 
   // ---------- 주소 (카카오 좌표→행정구역 변환: 시·구·동) ----------
   const addrCache = new Map();
