@@ -9,9 +9,18 @@
       const res = await fetch(CFG.SUPABASE_URL + path, { ...opt, headers: this.h(opt.headers) });
       if (!res.ok) throw new Error(await res.text());
       const text = await res.text();
-      return text ? JSON.parse(text) : null;
+      const data = text ? JSON.parse(text) : null;
+      if (!opt.withCount) return data;
+      return { data, total: +(res.headers.get("content-range") || "").split("/")[1] || 0 };
     },
-    all() { return this.req("/rest/v1/wasp_reports?select=*&order=created_at.desc&limit=500"); },
+    // 전화번호(reporter_phone4)는 공개 조회 대상이 아니므로 컬럼을 명시한다
+    COLS: "id,kind,lat,lng,note,photo_urls,created_at,done,handler,done_at",
+    page(n) {
+      return this.req(`/rest/v1/wasp_reports?select=${this.COLS}&order=created_at.desc`, {
+        withCount: true, headers: { Range: `${n * PAGE_SIZE}-${n * PAGE_SIZE + PAGE_SIZE - 1}`, Prefer: "count=exact" },
+      });
+    },
+    markers() { return this.req("/rest/v1/wasp_reports?select=id,kind,lat,lng,note,done&order=created_at.desc&limit=1000"); },
     async uploadPhoto(blob) {
       const name = `${crypto.randomUUID()}.jpg`;
       await this.req(`/storage/v1/object/wasp-photos/${name}`, { method: "POST", headers: { "Content-Type": "image/jpeg" }, body: blob });
@@ -21,7 +30,7 @@
       return this.req("/rest/v1/wasp_reports", { method: "POST", headers: { "Content-Type": "application/json", Prefer: "return=minimal" }, body: JSON.stringify(r) });
     },
     async complete(id, handler) {
-      const rows = await this.req(`/rest/v1/wasp_reports?id=eq.${id}&done=eq.false`, {
+      const rows = await this.req(`/rest/v1/wasp_reports?id=eq.${id}&done=eq.false&select=id`, {
         method: "PATCH", headers: { "Content-Type": "application/json", Prefer: "return=representation" },
         body: JSON.stringify({ done: true, handler, done_at: new Date().toISOString() }),
       });
@@ -42,10 +51,12 @@
   const full = (iso) => { const d = new Date(iso); return `${ymd(d)} ${hm(d)}`; };
   const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   const KIND = { sighting: "벌 목격", nest: "벌집 위치" };
+  const PAGE_SIZE = 10;
 
   // ---------- 상태 ----------
   const MAX_PHOTOS = 3;
-  let map, pickMarker, picked = null, photos = [], doneTarget = null, reports = [];
+  let map, pickMarker, picked = null, photos = [], doneTarget = null;
+  let rows = [], pins = [], total = 0, pageNo = 0;
   const markers = {};
 
   Store.visit().then((n) => { $("visit").textContent = `오늘 방문 ${n}명`; }).catch(() => { $("visit").textContent = ""; });
@@ -67,6 +78,8 @@
     $("mapMsg").hidden = true;
     const c = CFG.DEFAULT_CENTER;
     map = new kakao.maps.Map($("map"), { center: new kakao.maps.LatLng(c.lat, c.lng), level: 4 });
+    map.addControl(new kakao.maps.MapTypeControl(), kakao.maps.ControlPosition.TOPRIGHT); // 일반지도 / 스카이뷰(위성)
+    map.addControl(new kakao.maps.ZoomControl(), kakao.maps.ControlPosition.RIGHT);
     kakao.maps.event.addListener(map, "click", (e) => setPick(e.latLng.getLat(), e.latLng.getLng()));
     renderMarkers(); renderList();
   }
@@ -89,15 +102,20 @@
   function renderMarkers() {
     if (!map) return;
     Object.values(markers).forEach((m) => m.setMap(null));
-    reports.forEach((r) => {
+    pins.forEach((r) => {
       const color = r.done ? "#2b8a3e" : r.kind === "nest" ? "#d9480f" : "#e67700";
       markers[r.id] = new kakao.maps.Marker({ position: new kakao.maps.LatLng(r.lat, r.lng), map, image: markerImage(color), title: `${KIND[r.kind]} ${r.note || ""}` });
     });
   }
 
-  async function refresh() {
-    try { reports = await Store.all(); }
-    catch { $("list").innerHTML = '<div class="empty">목록을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.</div>'; return; }
+  // n: 이동할 페이지(0부터). 생략하면 현재 페이지를 다시 불러온다.
+  async function refresh(n = pageNo) {
+    try {
+      const [p, m] = await Promise.all([Store.page(n), Store.markers()]);
+      // 마지막 페이지의 항목이 모두 사라진 경우(예: 삭제) 한 페이지 앞으로
+      if (!p.data.length && n > 0 && p.total) return refresh(Math.ceil(p.total / PAGE_SIZE) - 1);
+      rows = p.data; total = p.total; pins = m; pageNo = n;
+    } catch { $("list").innerHTML = '<div class="empty">목록을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.</div>'; return; }
     renderMarkers(); renderList();
   }
 
@@ -162,25 +180,28 @@
     const kind = document.querySelector('input[name="kind"]:checked');
     if (!picked) return alert("위치를 지정해 주세요. (지도를 누르거나 '현위치 사용')");
     if (!kind) return alert("벌 목격인지 벌집 위치인지 선택해 주세요.");
+    const phone4 = $("phone4").value.trim();
+    if (phone4 && !/^\d{4}$/.test(phone4)) return alert("전화번호 뒷자리는 숫자 4자리로 입력해 주세요.");
     const btn = e.submitter; btn.disabled = true;
     try {
       const photo_urls = await Promise.all(photos.map((p) => Store.uploadPhoto(p.blob)));
-      await Store.add({ kind: kind.value, lat: picked.lat, lng: picked.lng, note: $("note").value.trim() || null, photo_urls });
+      await Store.add({ kind: kind.value, lat: picked.lat, lng: picked.lng, note: $("note").value.trim() || null, photo_urls, reporter_phone4: phone4 || null });
     } catch { btn.disabled = false; return alert("신고 접수에 실패했습니다. 네트워크를 확인하고 다시 시도해 주세요."); }
     btn.disabled = false;
     $("form").reset(); clearPhotos();
     picked = null; $("posText").textContent = "위치 미선택";
     if (pickMarker) { pickMarker.setMap(null); pickMarker = null; }
-    await refresh();
+    await refresh(0); // 새 신고는 첫 페이지 맨 위에 나온다
     alert("신고가 접수되었습니다.");
   };
 
   // ---------- 목록 (날짜별) ----------
   function renderList() {
-    $("count").textContent = `(${reports.length}건)`;
-    if (!reports.length) { $("list").innerHTML = '<div class="empty">접수된 신고가 없습니다.</div>'; return; }
+    $("count").textContent = `(총 ${total}건)`;
+    renderPager();
+    if (!rows.length) { $("list").innerHTML = '<div class="empty">접수된 신고가 없습니다.</div>'; return; }
     let html = "", cur = "";
-    for (const r of reports) {
+    for (const r of rows) {
       const d = ymd(new Date(r.created_at));
       if (d !== cur) { cur = d; html += `<div class="date">${d}</div>`; }
       html += `<div class="item" data-id="${r.id}">
@@ -199,10 +220,26 @@
     $("list").innerHTML = html;
   }
 
+  function renderPager() {
+    const pages = Math.ceil(total / PAGE_SIZE);
+    if (pages <= 1) { $("pager").innerHTML = ""; return; }
+    const from = Math.max(0, Math.min(pageNo - 2, pages - 5)), to = Math.min(pages, from + 5);
+    let html = `<button data-p="${pageNo - 1}" ${pageNo === 0 ? "disabled" : ""} aria-label="이전">‹</button>`;
+    for (let i = from; i < to; i++) html += `<button data-p="${i}" class="${i === pageNo ? "on" : ""}">${i + 1}</button>`;
+    html += `<button data-p="${pageNo + 1}" ${pageNo >= pages - 1 ? "disabled" : ""} aria-label="다음">›</button>`;
+    $("pager").innerHTML = html;
+  }
+
+  $("pager").onclick = async (e) => {
+    const b = e.target.closest("button[data-p]"); if (!b || b.disabled) return;
+    await refresh(+b.dataset.p);
+    $("list").scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
   $("list").onclick = (e) => {
     const b = e.target.closest("button[data-act]"); if (!b) return;
     const id = b.closest(".item").dataset.id;
-    const r = reports.find((x) => x.id === id);
+    const r = rows.find((x) => x.id === id);
     if (b.dataset.act === "show" && map) {
       map.setCenter(new kakao.maps.LatLng(r.lat, r.lng)); map.setLevel(3);
       $("map").scrollIntoView({ behavior: "smooth" });
