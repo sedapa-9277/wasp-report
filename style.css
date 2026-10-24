@@ -52,10 +52,17 @@ input[type=text]{width:100%;margin-top:4px;padding:10px;border:1px solid var(--l
 .item .acts{display:flex;gap:8px;margin-top:8px}
 .item .acts .btn{padding:6px 10px;font-size:13px}
 .result{margin-top:6px;font-size:13px;color:var(--ok)}
-.datebar{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin:4px 0 8px}
-.datebar .btn{padding:8px 10px;font-size:14px}
-.datebar .btn.on{background:var(--main);border-color:var(--main);color:#fff}
-.datebar input[type=date]{flex:1 1 140px;min-width:0;padding:8px;border:1px solid var(--line);border-radius:8px;font:inherit;background:var(--bg);color:var(--ink)}
+.stats{display:flex;gap:10px;margin-bottom:12px}
+.stats .chip{flex:1;text-align:center;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:8px 6px;font-size:13px;color:var(--mute)}
+.stats .chip b{display:block;font-size:20px;color:var(--ink)}
+.stats .chip.ok b{color:var(--ok)}
+.datebar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:center;background:var(--main);border-radius:12px;padding:12px;margin:6px 0 10px}
+.datebar .nav,.daylabel{height:44px;border-radius:10px;border:1px solid rgba(255,255,255,.4);background:rgba(255,255,255,.18);color:#fff;font:inherit;font-size:18px}
+.datebar .nav{width:44px;cursor:pointer;font-size:22px;line-height:1;padding:0}
+.daylabel{position:relative;display:flex;align-items:center;padding:0 20px;white-space:nowrap;cursor:pointer}
+.daylabel input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer}
+.datebar .pill{height:32px;padding:0 14px;border-radius:99px;border:1px solid rgba(255,255,255,.5);background:transparent;color:#fff;font:inherit;font-size:13px;cursor:pointer}
+.datebar .pill.on{background:#fff;color:var(--main);font-weight:700}
 .pager{display:flex;justify-content:center;gap:6px;margin-top:12px;flex-wrap:wrap}
 .pager button{min-width:36px;height:36px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);font:inherit;cursor:pointer}
 .pager button.on{background:var(--main);border-color:var(--main);color:#fff;font-weight:700}

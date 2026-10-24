@@ -76,8 +76,9 @@
   // ---------- 상단 현황 (방문 / 신고 / 처리완료) ----------
   const stats = { visit: null, reports: null, done: null };
   function renderStats() {
-    const part = (label, v, unit) => (v == null ? "" : `<span>${label} <b>${v}</b>${unit}</span>`);
-    $("visit").innerHTML = part("오늘 방문", stats.visit, "명") + part("신고", stats.reports, "건") + part("처리완료", stats.done, "건");
+    $("visit").innerHTML = stats.visit == null ? "" : `<span>오늘 방문 <b>${stats.visit}</b>명</span>`;
+    const chip = (label, v, cls = "") => `<div class="chip ${cls}">${label}<b>${v ?? "-"}</b></div>`;
+    $("stats").innerHTML = chip("전체 신고", stats.reports) + chip("처리완료", stats.done, "ok");
   }
   Store.visit().then((n) => { stats.visit = n; renderStats(); }).catch(() => {});
 
@@ -246,6 +247,8 @@
   // ---------- 날짜 선택 ----------
   function setDay(d, reload = true) {
     day = d; $("dayPick").value = d;
+    const [y, m, dd] = (d || "").split("-").map(Number);
+    $("dayText").textContent = d ? `${d} (${"일월화수목금토"[new Date(y, m - 1, dd).getDay()]})` : "전체 기간";
     document.querySelectorAll("#datebar [data-day]").forEach((b) => {
       b.classList.toggle("on", (b.dataset.day === "today" && d === ymd(new Date())) || (b.dataset.day === "all" && !d));
     });
@@ -260,6 +263,7 @@
   $("dayToday").onclick = () => setDay(ymd(new Date()));
   $("dayAll").onclick = () => setDay("");
   $("dayPick").onchange = (e) => setDay(e.target.value); // 지우면 전체
+  $("dayPick").onclick = (e) => { try { e.target.showPicker(); } catch {} }; // 글자 부분을 눌러도 달력이 열리게
   setDay(day, false);
 
   function renderPager() {
