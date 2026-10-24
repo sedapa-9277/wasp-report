@@ -14,6 +14,7 @@ body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,"Mal
 .map-filter button{border:0;border-right:1px solid #e1e1e1;background:#fff;color:#333;font:inherit;font-size:12px;padding:7px 9px;cursor:pointer;white-space:nowrap}
 .map-filter button:last-child{border-right:0}
 .map-filter button b{margin-left:2px;color:#777;font-weight:600}
+@media(max-width:520px){.map-filter{top:6px;left:6px}.map-filter button{font-size:11px;padding:6px 6px}}
 .map-filter button.on{background:var(--main);color:#fff}
 .map-filter button.on b{color:#fff}
 .lb{z-index:70;background:rgba(0,0,0,.88);padding:0}
