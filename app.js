@@ -22,7 +22,7 @@
       if (!opt.withCount) return data;
       return { data, total: +(res.headers.get("content-range") || "").split("/")[1] || 0 };
     },
-    COLS: "id,kind,lat,lng,note,photo_urls,created_at,done,handler,done_at",
+    COLS: "id,kind,lat,lng,note,photo_urls,created_at,done,handler,done_at,reporter_phone4",
     // day: 'YYYY-MM-DD'(브라우저 현지 시간 기준 하루). 비우면 전체
     dayFilter(day) {
       if (!day) return "";
@@ -80,6 +80,7 @@
   const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   const kindName = (k) => t({ sighting: "kindSighting", nest: "kindNest", both: "kindBoth" }[k]);
   const PAGE_SIZE = 10;
+  const TAP_RADIUS = 28; // 지도를 탭했을 때 이 거리(px) 안의 신고를 선택한 것으로 본다
   const MAX_PHOTOS = 3;
   const fmtSize = (b) => (b < 1024 * 1024 ? `${Math.max(1, Math.round(b / 1024))}KB` : `${(b / 1024 / 1024).toFixed(1)}MB`);
 
@@ -137,7 +138,19 @@
     map = new kakao.maps.Map($("map"), { center: new kakao.maps.LatLng(c.lat, c.lng), level: 4 });
     map.addControl(new kakao.maps.MapTypeControl(), kakao.maps.ControlPosition.TOPRIGHT); // 일반지도 / 스카이뷰(위성)
     map.addControl(new kakao.maps.ZoomControl(), kakao.maps.ControlPosition.RIGHT);
-    kakao.maps.event.addListener(map, "click", (e) => setPick(e.latLng.getLat(), e.latLng.getLng()));
+    // 지도를 탭하면: 가까운(28px 이내) 신고가 있으면 그 신고를 열고, 없으면 신고 위치로 지정한다.
+    // 손가락은 작은 마커를 정확히 누르기 어려워서 가장 가까운 마커를 대신 찾아 준다.
+    kakao.maps.event.addListener(map, "click", (e) => {
+      const proj = map.getProjection(), tap = proj.containerPointFromCoords(e.latLng);
+      let best = null, bestD = TAP_RADIUS;
+      for (const r of pins) {
+        const p = proj.containerPointFromCoords(new kakao.maps.LatLng(r.lat, r.lng));
+        const d = Math.hypot(p.x - tap.x, p.y - tap.y);
+        if (d <= bestD && markers[r.id]) { bestD = d; best = r; }
+      }
+      if (best) openInfo(best, markers[best.id].marker);
+      else setPick(e.latLng.getLat(), e.latLng.getLng());
+    });
     renderMarkers(); renderList();
   }
 
@@ -155,10 +168,9 @@
   }
 
   function markerImage(color) {
-    // 보이는 원은 작게(지름 약 24px) 두고, 투명한 여백을 둘러 터치로 눌리는 영역을 48px로 넓힌다
-    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48"><circle cx="24" cy="24" r="9" fill="${color}" stroke="#fff" stroke-width="3"/></svg>`;
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="26" height="26"><circle cx="13" cy="13" r="10" fill="${color}" stroke="#fff" stroke-width="3"/></svg>`;
     // 원의 중심이 좌표에 오도록 기준점을 이미지 가운데로 둔다
-    return new kakao.maps.MarkerImage("data:image/svg+xml," + encodeURIComponent(svg), new kakao.maps.Size(48, 48), { offset: new kakao.maps.Point(24, 24) });
+    return new kakao.maps.MarkerImage("data:image/svg+xml," + encodeURIComponent(svg), new kakao.maps.Size(26, 26), { offset: new kakao.maps.Point(13, 13) });
   }
 
   function renderMarkers() {
@@ -167,18 +179,17 @@
     pins.forEach((r) => {
       const pos = new kakao.maps.LatLng(r.lat, r.lng);
       const color = r.done ? "#2b8a3e" : r.kind !== "sighting" ? "#d9480f" : "#e67700";
-      const marker = new kakao.maps.Marker({ position: pos, map, image: markerImage(color), title: `${kindName(r.kind)} ${r.note || ""}` });
+      const marker = new kakao.maps.Marker({ position: pos, map, image: markerImage(color), clickable: true, title: `${kindName(r.kind)} ${r.note || ""}` });
       // 마커 옆 작은 라벨: 신고 일시(+전화번호 뒷자리), 줄바꿈 후 완료 일시
       const phone = r.reporter_phone4 ? ` ☎${esc(r.reporter_phone4)}` : "";
-      // 라벨도 눌리게 해서 작은 마커를 정확히 못 눌러도 글자를 눌러 열 수 있다
-      const el = document.createElement("div");
-      el.className = "pin-label";
-      el.innerHTML = `${t("pinReport", { t: md(r.created_at) })}${phone}${r.done && r.done_at ? `<br><span class="ok">${t("pinDone", { t: md(r.done_at) })}</span>` : ""}`;
-      el.onclick = () => openInfo(r, marker);
-      const label = new kakao.maps.CustomOverlay({ position: pos, xAnchor: 0, yAnchor: 0.5, zIndex: 1, content: el, clickable: true });
+      // 라벨은 터치가 통과하게 두어(pointer-events:none) 옆 마커를 가리지 않는다
+      const label = new kakao.maps.CustomOverlay({
+        position: pos, xAnchor: 0, yAnchor: 0.5, zIndex: 1,
+        content: `<div class="pin-label">${t("pinReport", { t: md(r.created_at) })}${phone}${r.done && r.done_at ? `<br><span class="ok">${t("pinDone", { t: md(r.done_at) })}</span>` : ""}</div>`,
+      });
       label.setMap(map);
       kakao.maps.event.addListener(marker, "click", () => openInfo(r, marker));
-      markers[r.id] = { setMap(m) { marker.setMap(m); label.setMap(m); } };
+      markers[r.id] = { marker, setMap(m) { marker.setMap(m); label.setMap(m); } };
     });
     if (info) { info.close(); info = null; } // 목록이 갱신되면 열려 있던 팝업은 닫는다
   }
@@ -310,7 +321,7 @@
           <span><span class="tag ${r.kind}">${kindName(r.kind)}</span> ${esc(r.note || t("descNone"))}</span>
           <span class="tag ${r.done ? "done" : ""}" style="${r.done ? "" : "background:#868e96"}">${t(r.done ? "statusDone" : "statusNew")}</span>
         </div>
-        <div class="meta">${t("reportedAt", { t: hm(new Date(r.created_at)) })}</div>
+        <div class="meta">${t("reportedAt", { t: hm(new Date(r.created_at)) })}${r.reporter_phone4 ? ` · ${t("pinPhone", { p: esc(r.reporter_phone4) })}` : ""}</div>
         ${r.photo_urls?.length ? `<div class="thumbs">${r.photo_urls.map((u) => `<a href="${esc(u)}" target="_blank" rel="noopener"><img src="${esc(u)}" alt="${esc(t("photoAlt"))}" loading="lazy"></a>`).join("")}</div>` : ""}
         ${r.done ? `<div class="result">✔ ${t("handlerLbl")} ${esc(r.handler)} · ${full(r.done_at)}</div>` : ""}
         <div class="acts">
