@@ -33,7 +33,7 @@
       if (!res.ok) throw new Error("count");
       return +(res.headers.get("content-range") || "").split("/")[1] || 0;
     },
-    markers() { return this.req("/rest/v1/wasp_reports?select=id,kind,lat,lng,note,done&order=created_at.desc&limit=1000"); },
+    markers() { return this.req("/rest/v1/wasp_reports?select=id,kind,lat,lng,note,done,created_at,done_at&order=created_at.desc&limit=1000"); },
     async uploadPhoto(blob) {
       const name = `${crypto.randomUUID()}.jpg`;
       await this.req(`/storage/v1/object/wasp-photos/${name}`, { method: "POST", headers: { "Content-Type": "image/jpeg" }, body: blob });
@@ -41,6 +41,11 @@
     },
     add(r) {
       return this.req("/rest/v1/wasp_reports", { method: "POST", headers: { "Content-Type": "application/json", Prefer: "return=minimal" }, body: JSON.stringify(r) });
+    },
+    // 테스트 기간 한정 기능. 비밀번호 추가 시 이 함수와 목록의 삭제 버튼을 함께 손볼 것.
+    async remove(id) {
+      const rows = await this.req(`/rest/v1/wasp_reports?id=eq.${id}&select=id`, { method: "DELETE", headers: { Prefer: "return=representation" } });
+      if (!rows.length) throw new Error("not deleted");
     },
     async complete(id, handler) {
       const rows = await this.req(`/rest/v1/wasp_reports?id=eq.${id}&done=eq.false&select=id`, {
@@ -117,15 +122,26 @@
 
   function markerImage(color) {
     const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"><circle cx="12" cy="12" r="9" fill="${color}" stroke="#fff" stroke-width="3"/></svg>`;
-    return new kakao.maps.MarkerImage("data:image/svg+xml," + encodeURIComponent(svg), new kakao.maps.Size(24, 24));
+    // 원의 중심이 좌표에 오도록 기준점을 이미지 가운데로 둔다
+    return new kakao.maps.MarkerImage("data:image/svg+xml," + encodeURIComponent(svg), new kakao.maps.Size(24, 24), { offset: new kakao.maps.Point(12, 12) });
   }
+
+  const md = (iso) => { const d = new Date(iso); return `${pad(d.getMonth() + 1)}/${pad(d.getDate())} ${hm(d)}`; };
 
   function renderMarkers() {
     if (!map) return;
     Object.values(markers).forEach((m) => m.setMap(null));
     pins.forEach((r) => {
+      const pos = new kakao.maps.LatLng(r.lat, r.lng);
       const color = r.done ? "#2b8a3e" : r.kind !== "sighting" ? "#d9480f" : "#e67700";
-      markers[r.id] = new kakao.maps.Marker({ position: new kakao.maps.LatLng(r.lat, r.lng), map, image: markerImage(color), title: `${KIND[r.kind]} ${r.note || ""}` });
+      const marker = new kakao.maps.Marker({ position: pos, map, image: markerImage(color), title: `${KIND[r.kind]} ${r.note || ""}` });
+      // 마커 옆 작은 라벨: 신고 일시, 줄바꿈 후 완료 일시
+      const label = new kakao.maps.CustomOverlay({
+        position: pos, xAnchor: 0, yAnchor: 0.5, zIndex: 1,
+        content: `<div class="pin-label">${md(r.created_at)}${r.done && r.done_at ? `<br><span class="ok">완료 ${md(r.done_at)}</span>` : ""}</div>`,
+      });
+      label.setMap(map);
+      markers[r.id] = { setMap(m) { marker.setMap(m); label.setMap(m); } };
     });
   }
 
@@ -239,6 +255,7 @@
         <div class="acts">
           ${map ? '<button class="btn sub" data-act="show">지도 보기</button>' : ""}
           ${r.done ? "" : '<button class="btn sub" data-act="done">처리완료 입력</button>'}
+          <button class="btn sub danger" data-act="del">삭제</button>
         </div></div>`;
     }
     $("list").innerHTML = html;
@@ -249,6 +266,9 @@
     day = d; $("dayPick").value = d;
     const [y, m, dd] = (d || "").split("-").map(Number);
     $("dayText").textContent = d ? `${d} (${"일월화수목금토"[new Date(y, m - 1, dd).getDay()]})` : "전체 기간";
+    const today = ymd(new Date());
+    $("dayPick").max = today;
+    $("dayNext").disabled = !d || d >= today; // 오늘 이후(미래)로는 이동 불가
     document.querySelectorAll("#datebar [data-day]").forEach((b) => {
       b.classList.toggle("on", (b.dataset.day === "today" && d === ymd(new Date())) || (b.dataset.day === "all" && !d));
     });
@@ -262,7 +282,7 @@
   $("dayNext").onclick = () => shiftDay(1);
   $("dayToday").onclick = () => setDay(ymd(new Date()));
   $("dayAll").onclick = () => setDay("");
-  $("dayPick").onchange = (e) => setDay(e.target.value); // 지우면 전체
+  $("dayPick").onchange = (e) => { const t = ymd(new Date()); setDay(e.target.value > t ? t : e.target.value); }; // 지우면 전체, 미래는 오늘로
   $("dayPick").onclick = (e) => { try { e.target.showPicker(); } catch {} }; // 글자 부분을 눌러도 달력이 열리게
   setDay(day, false);
 
@@ -282,11 +302,15 @@
     $("list").scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
-  $("list").onclick = (e) => {
+  $("list").onclick = async (e) => {
     const b = e.target.closest("button[data-act]"); if (!b) return;
     const id = b.closest(".item").dataset.id;
     const r = rows.find((x) => x.id === id);
-    if (b.dataset.act === "show" && map) {
+    if (b.dataset.act === "del") {
+      if (!confirm("이 신고를 삭제할까요? 삭제하면 되돌릴 수 없습니다.")) return;
+      try { await Store.remove(id); } catch { return alert("삭제하지 못했습니다. 잠시 후 다시 시도해 주세요."); }
+      await refresh();
+    } else if (b.dataset.act === "show" && map) {
       map.setCenter(new kakao.maps.LatLng(r.lat, r.lng)); map.setLevel(3);
       $("map").scrollIntoView({ behavior: "smooth" });
     } else if (b.dataset.act === "done") {
