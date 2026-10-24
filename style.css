@@ -39,7 +39,13 @@ input[type=text]{width:100%;margin-top:4px;padding:10px;border:1px solid var(--l
 .btn.file{display:inline-block}
 .thumbs{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
 .thumbs img{width:96px;height:96px;object-fit:cover;border-radius:8px;display:block}
-.thumb{position:relative}
+.thumb{position:relative;width:96px}
+.thumb .cap{margin-top:3px;font-size:11px;line-height:1.35;color:var(--mute);text-align:center}
+.pin-info{padding:8px 10px;min-width:170px;max-width:240px;font-size:12px;line-height:1.5;color:#222;background:#fff}
+.pin-info .row{margin-top:3px;color:#555}
+.pin-info .row.ok{color:#2b8a3e}
+.pin-info .ph{display:flex;gap:4px;margin-top:6px;flex-wrap:wrap}
+.pin-info .ph img{width:64px;height:64px;object-fit:cover;border-radius:6px;display:block}
 .thumb button{position:absolute;top:-6px;right:-6px;width:22px;height:22px;border:0;border-radius:50%;background:#000a;color:#fff;font-size:14px;line-height:1;cursor:pointer}
 .date{font-size:13px;font-weight:700;color:var(--mute);margin:14px 0 6px}
 .item{border:1px solid var(--line);border-radius:10px;padding:10px;margin-bottom:8px}

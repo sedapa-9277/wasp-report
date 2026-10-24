@@ -33,7 +33,7 @@
       if (!res.ok) throw new Error("count");
       return +(res.headers.get("content-range") || "").split("/")[1] || 0;
     },
-    markers() { return this.req("/rest/v1/wasp_reports?select=id,kind,lat,lng,note,done,created_at,done_at&order=created_at.desc&limit=1000"); },
+    markers() { return this.req("/rest/v1/wasp_reports?select=id,kind,lat,lng,note,done,created_at,done_at,handler,photo_urls&order=created_at.desc&limit=1000"); },
     async uploadPhoto(blob) {
       const name = `${crypto.randomUUID()}.jpg`;
       await this.req(`/storage/v1/object/wasp-photos/${name}`, { method: "POST", headers: { "Content-Type": "image/jpeg" }, body: blob });
@@ -89,6 +89,7 @@
 
   const KIND = { sighting: "벌 목격", nest: "벌집 위치", both: "목격+벌집" };
   const PAGE_SIZE = 10;
+  const fmtSize = (b) => (b < 1024 * 1024 ? `${Math.max(1, Math.round(b / 1024))}KB` : `${(b / 1024 / 1024).toFixed(1)}MB`);
 
   // ---------- 상태 ----------
   const MAX_PHOTOS = 3;
@@ -157,11 +158,30 @@
       // 마커 옆 작은 라벨: 신고 일시, 줄바꿈 후 완료 일시
       const label = new kakao.maps.CustomOverlay({
         position: pos, xAnchor: 0, yAnchor: 0.5, zIndex: 1,
-        content: `<div class="pin-label">${md(r.created_at)}${r.done && r.done_at ? `<br><span class="ok">완료 ${md(r.done_at)}</span>` : ""}</div>`,
+        content: `<div class="pin-label">신고 ${md(r.created_at)}${r.done && r.done_at ? `<br><span class="ok">완료 ${md(r.done_at)}</span>` : ""}</div>`,
       });
       label.setMap(map);
+      kakao.maps.event.addListener(marker, "click", () => openInfo(r, marker));
       markers[r.id] = { setMap(m) { marker.setMap(m); label.setMap(m); } };
     });
+    if (info) { info.close(); info = null; } // 목록이 갱신되면 열려 있던 팝업은 닫는다
+  }
+
+  // 마커를 누르면 해당 신고 내용을 팝업으로 보여준다
+  let info = null;
+  function openInfo(r, marker) {
+    if (info) info.close();
+    const photos = (r.photo_urls || []).map((u) => `<a href="${esc(u)}" target="_blank" rel="noopener"><img src="${esc(u)}" alt="신고 사진"></a>`).join("");
+    info = new kakao.maps.InfoWindow({
+      removable: true, zIndex: 20,
+      content: `<div class="pin-info">
+        <div><span class="tag ${r.kind}">${KIND[r.kind]}</span> <b>${esc(r.note || "(설명 없음)")}</b></div>
+        <div class="row">신고 ${full(r.created_at)}</div>
+        ${r.done ? `<div class="row ok">완료 ${full(r.done_at)}<br>담당 ${esc(r.handler || "-")}</div>` : '<div class="row">처리 대기</div>'}
+        ${photos ? `<div class="ph">${photos}</div>` : ""}
+      </div>`,
+    });
+    info.open(map, marker);
   }
 
   // n: 이동할 페이지(0부터). 생략하면 현재 페이지를 다시 불러온다.
@@ -197,7 +217,7 @@
         cv.width = Math.round(img.width * k); cv.height = Math.round(img.height * k);
         cv.getContext("2d").drawImage(img, 0, 0, cv.width, cv.height);
         URL.revokeObjectURL(img.src);
-        cv.toBlob((b) => (b ? resolve(b) : reject()), "image/jpeg", 0.8);
+        cv.toBlob((b) => (b ? resolve({ blob: b, w: cv.width, h: cv.height }) : reject()), "image/jpeg", 0.8);
       };
       img.onerror = reject;
       img.src = URL.createObjectURL(file);
@@ -208,7 +228,7 @@
     const room = MAX_PHOTOS - photos.length;
     if (files.length > room) notify(`사진은 최대 ${MAX_PHOTOS}장까지 등록할 수 있습니다.`);
     for (const f of files.slice(0, Math.max(room, 0))) {
-      try { const blob = await shrink(f); photos.push({ blob, url: URL.createObjectURL(blob) }); }
+      try { const s = await shrink(f); photos.push({ ...s, orig: f.size, url: URL.createObjectURL(s.blob) }); }
       catch { notify("사진을 불러오지 못했습니다."); }
     }
     renderPhotos();
@@ -216,7 +236,8 @@
 
   function renderPhotos() {
     $("previews").innerHTML = photos.map((p, i) =>
-      `<div class="thumb"><img src="${p.url}" alt="사진 ${i + 1}"><button type="button" data-i="${i}" aria-label="사진 삭제">×</button></div>`).join("");
+      `<div class="thumb"><img src="${p.url}" alt="사진 ${i + 1}"><button type="button" data-i="${i}" aria-label="사진 삭제">×</button>
+        <div class="cap">${p.w}×${p.h}<br>${fmtSize(p.blob.size)}${p.orig > p.blob.size ? `<br><s>원본 ${fmtSize(p.orig)}</s>` : ""}</div></div>`).join("");
     $("photoCount").textContent = photos.length ? `(${photos.length}/${MAX_PHOTOS})` : "";
   }
 
