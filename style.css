@@ -5,10 +5,19 @@ body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,"Mal
 .top{display:flex;justify-content:space-between;align-items:center;padding:10px 16px;background:var(--main);color:#fff}
 .top h1{font-size:18px;margin:0}
 .visit{font-size:12px;opacity:.9}
-#map{height:45vh;min-height:260px;position:relative;background:#ddd}
+#map{height:45vh;min-height:260px;position:relative;background:#ddd;grid-area:map;border-radius:12px;overflow:hidden}
 .map-msg{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:16px;color:#555;z-index:1}
 .map-msg[hidden]{display:none}
 main{max-width:640px;margin:0 auto;padding:12px 16px 40px}
+.layout{display:grid;grid-template-areas:"map" "form" "list";gap:14px}
+.layout .card{margin-bottom:0}
+.form-card{grid-area:form}
+.list-card{grid-area:list}
+@media(min-width:900px){
+  main.layout{max-width:1200px;grid-template-columns:minmax(0,1fr) 380px;grid-template-areas:"map form" "list form";align-items:start}
+  #map{height:55vh}
+  .form-card{position:sticky;top:12px}
+}
 .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:14px}
 h2{font-size:17px;margin:0 0 8px}h2 small{color:var(--mute);font-weight:400}
 .hint{color:var(--mute);font-size:13px;margin:4px 0 10px}
