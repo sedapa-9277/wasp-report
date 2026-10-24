@@ -481,14 +481,17 @@
     $("datebar").classList.toggle("dim", !!q); // 검색 중에는 날짜 선택이 적용되지 않음을 흐리게 표시
     if (reload) refresh(0);
   }
-  let searchTimer = null;
+  // 입력만으로는 검색하지 않고, '검색' 버튼(또는 키보드의 검색/Enter)을 눌렀을 때 한 번만 찾는다
   $("phoneQ").oninput = (e) => {
-    const q = e.target.value.replace(/\D/g, "").slice(0, 4); // 숫자만
-    e.target.value = q;
-    clearTimeout(searchTimer);
-    searchTimer = setTimeout(() => { if (q !== phoneQ) setSearch(q); }, 300); // 입력이 멈추면 검색
+    e.target.value = e.target.value.replace(/\D/g, "").slice(0, 4); // 숫자만
+    $("phoneQClear").hidden = !e.target.value && !phoneQ;
   };
-  $("phoneQClear").onclick = () => { setSearch(""); $("phoneQ").focus(); };
+  $("searchForm").onsubmit = (e) => {
+    e.preventDefault();
+    $("phoneQ").blur(); // 휴대폰 키보드를 내린다
+    setSearch($("phoneQ").value);
+  };
+  $("phoneQClear").onclick = () => { $("phoneQ").value = ""; if (phoneQ) setSearch(""); else $("phoneQClear").hidden = true; $("phoneQ").focus(); };
 
   function renderPager() {
     const pages = Math.ceil(total / PAGE_SIZE);

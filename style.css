@@ -8,7 +8,9 @@ body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,"Mal
 .hdr-right{display:flex;align-items:center;gap:8px}
 .icon-btn{width:32px;height:32px;border-radius:50%;border:1px solid rgba(255,255,255,.55);background:rgba(255,255,255,.15);color:#fff;font-size:16px;line-height:1;cursor:pointer;padding:0}
 .pill-btn{height:32px;padding:0 12px;border-radius:99px;border:1px solid rgba(255,255,255,.7);background:#fff;color:var(--main);font:inherit;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap}
-.searchbar{position:relative;margin:0 0 10px}
+.searchbar{display:flex;gap:6px;margin:0 0 10px}
+.searchbar .sb-input{position:relative;flex:1;min-width:0}
+.searchbar .btn.main.sb-go{width:auto;margin:0;padding:0 16px;flex:none}
 .searchbar input{width:100%;padding:10px 40px 10px 12px;border:1px solid var(--line);border-radius:10px;font:inherit;font-size:14px;background:var(--bg);color:var(--ink)}
 .searchbar .clear{position:absolute;right:6px;top:50%;transform:translateY(-50%);width:30px;height:30px;border:0;border-radius:50%;background:var(--line);color:var(--ink);font-size:18px;line-height:1;cursor:pointer}
 .datebar.dim{opacity:.45}

@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>말벌 신고</title>
-<link rel="stylesheet" href="style.css?v=25">
+<link rel="stylesheet" href="style.css?v=26">
 </head>
 <body>
 <header class="top">
@@ -82,10 +82,13 @@
         <button type="button" id="dayAll" class="pill" data-day="all" data-i18n="allShort"></button>
       </span>
     </div>
-    <div class="searchbar">
-      <input type="text" id="phoneQ" inputmode="numeric" maxlength="4" autocomplete="off" data-i18n-ph="searchPh" data-i18n-aria="searchPh">
-      <button type="button" id="phoneQClear" class="clear" data-i18n-aria="searchClear" hidden>×</button>
-    </div>
+    <form class="searchbar" id="searchForm" novalidate>
+      <div class="sb-input">
+        <input type="text" id="phoneQ" inputmode="numeric" enterkeyhint="search" maxlength="4" autocomplete="off" data-i18n-ph="searchPh" data-i18n-aria="searchPh">
+        <button type="button" id="phoneQClear" class="clear" data-i18n-aria="searchClear" hidden>×</button>
+      </div>
+      <button type="submit" class="btn main sb-go" data-i18n="searchBtn"></button>
+    </form>
     <div id="list"></div>
     <nav id="pager" class="pager" data-i18n-aria="pagerLabel"></nav>
   </section>
@@ -161,8 +164,8 @@
   </div>
 </div>
 
-<script src="config.js?v=25"></script>
-<script src="i18n.js?v=25"></script>
-<script src="app.js?v=25"></script>
+<script src="config.js?v=26"></script>
+<script src="i18n.js?v=26"></script>
+<script src="app.js?v=26"></script>
 </body>
 </html>

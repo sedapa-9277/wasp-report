@@ -6,7 +6,7 @@ window.I18N = {
     mapSetting: "지도 표시", optLabels: "마커 옆에 신고·완료 일시 보기",
     filterAll: "전체", filterPending: "처리 대기", filterDone: "처리 완료", mapFilterLabel: "지도에 표시할 신고",
     reportNo: "No.{n}", moreWiki: "위키백과에서 보기",
-    searchPh: "🔍 신고자 전화번호 뒷자리로 검색", searchClear: "검색 지우기",
+    searchPh: "🔍 신고자 전화번호 뒷자리", searchClear: "검색 지우기", searchBtn: "검색",
     countSearch: "(☎ {q} 검색 · 전체 날짜 · {n}건)", emptySearch: "검색 결과가 없습니다.",
     mapLoading: "지도를 불러오는 중…",
     mapNoKey: "config.js 에 카카오 JavaScript 키를 입력하면<br>지도가 표시됩니다.<br>(지도 없이도 '현위치 사용'으로 신고할 수 있어요)",
@@ -117,7 +117,7 @@ window.I18N = {
       { h: "3. 신고 목록", p: [
         "‘‹ ›’ 버튼으로 하루씩 이동하고, 날짜를 눌러 달력에서 고를 수 있습니다. ‘오늘’은 오늘로, ‘전체’는 모든 날짜를 봅니다.",
         "한 페이지에 10건씩 보이며 아래 번호로 페이지를 넘깁니다.",
-        "검색창에 신고자 전화번호 뒷자리를 입력하면 날짜와 상관없이 해당 번호의 신고를 찾습니다. 일부 숫자만 넣어도 됩니다. 날짜 버튼을 누르거나 ×를 누르면 검색이 끝납니다.",
+        "검색칸에 신고자 전화번호 뒷자리를 입력하고 ‘검색’을 누르면 날짜와 상관없이 해당 번호의 신고를 찾습니다. 일부 숫자만 넣어도 됩니다. 날짜 버튼을 누르거나 ×를 누르면 검색이 끝납니다.",
         "‘지도 보기’를 누르면 해당 신고 위치로 지도가 이동합니다." ] },
       { h: "4. 처리완료 입력", p: [
         "목록에서 ‘처리완료 입력’을 누르고 담당자(기관) 이름을 입력합니다. 예) 수원남부소방서",
@@ -138,7 +138,7 @@ window.I18N = {
     mapSetting: "Map display", optLabels: "Show report / resolved times beside markers",
     filterAll: "All", filterPending: "Pending", filterDone: "Resolved", mapFilterLabel: "Reports shown on the map",
     reportNo: "#{n}", moreWiki: "Wikipedia (Korean)",
-    searchPh: "🔍 Search by reporter phone (last 4 digits)", searchClear: "Clear search",
+    searchPh: "🔍 Reporter phone (last 4 digits)", searchClear: "Clear search", searchBtn: "Search",
     countSearch: "(☎ {q} · all dates · {n})", emptySearch: "No matching reports.",
     mapLoading: "Loading map…",
     mapNoKey: "Enter your Kakao JavaScript key in config.js<br>to show the map.<br>(You can still report with “Use my location”.)",
@@ -249,7 +249,7 @@ window.I18N = {
       { h: "3. Report list", p: [
         "Use ‹ › to move one day at a time, or tap the date to pick from a calendar. “Today” jumps to today and “All” shows every date.",
         "Reports are shown 10 per page; use the numbers below to change pages.",
-        "Type the reporter's phone last digits in the search box to find their reports across all dates (partial digits work too). Tap a date button or × to end the search.",
+        "Type the reporter's phone last digits and press “Search” to find their reports across all dates (partial digits work too). Tap a date button or × to end the search.",
         "“Show on map” moves the map to that report." ] },
       { h: "4. Marking as resolved", p: [
         "Press “Mark resolved” in the list and enter the handler (agency) name, e.g. Suwon South Fire Station.",
