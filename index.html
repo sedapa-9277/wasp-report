@@ -4,13 +4,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>말벌 신고</title>
-<link rel="stylesheet" href="style.css?v=16">
+<link rel="stylesheet" href="style.css?v=17">
 </head>
 <body>
 <header class="top">
   <h1>🐝 <span data-i18n="appName">말벌 위치 신고</span></h1>
   <div class="hdr-right">
     <div class="visit" id="visit"></div>
+    <button type="button" id="btnInfo" class="pill-btn" data-i18n="infoBtn">벌 안전 가이드</button>
     <button type="button" id="btnHelp" class="icon-btn" data-i18n-aria="help" aria-label="사용 설명서">?</button>
     <button type="button" id="btnSettings" class="icon-btn" data-i18n-aria="settings" aria-label="설정">⚙</button>
   </div>
@@ -114,6 +115,15 @@
   </div>
 </div>
 
+<!-- 벌 안전 가이드 (응급처치, 주요 말벌) -->
+<div id="infoWrap" class="modal" hidden>
+  <div class="dialog help" role="dialog" aria-modal="true" aria-labelledby="infoTitle">
+    <h3 id="infoTitle" data-i18n="infoTitle"></h3>
+    <div id="infoBody" class="help-body"></div>
+    <button type="button" id="infoClose" class="btn main" data-i18n="close"></button>
+  </div>
+</div>
+
 <!-- 사용 설명서 -->
 <div id="helpWrap" class="modal" hidden>
   <div class="dialog help" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
@@ -123,8 +133,8 @@
   </div>
 </div>
 
-<script src="config.js?v=16"></script>
-<script src="i18n.js?v=16"></script>
-<script src="app.js?v=16"></script>
+<script src="config.js?v=17"></script>
+<script src="i18n.js?v=17"></script>
+<script src="app.js?v=17"></script>
 </body>
 </html>

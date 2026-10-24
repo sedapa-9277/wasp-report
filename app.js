@@ -155,9 +155,10 @@
   }
 
   function markerImage(color) {
-    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"><circle cx="12" cy="12" r="9" fill="${color}" stroke="#fff" stroke-width="3"/></svg>`;
+    // 보이는 원은 작게(지름 약 24px) 두고, 투명한 여백을 둘러 터치로 눌리는 영역을 48px로 넓힌다
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48"><circle cx="24" cy="24" r="9" fill="${color}" stroke="#fff" stroke-width="3"/></svg>`;
     // 원의 중심이 좌표에 오도록 기준점을 이미지 가운데로 둔다
-    return new kakao.maps.MarkerImage("data:image/svg+xml," + encodeURIComponent(svg), new kakao.maps.Size(24, 24), { offset: new kakao.maps.Point(12, 12) });
+    return new kakao.maps.MarkerImage("data:image/svg+xml," + encodeURIComponent(svg), new kakao.maps.Size(48, 48), { offset: new kakao.maps.Point(24, 24) });
   }
 
   function renderMarkers() {
@@ -169,10 +170,12 @@
       const marker = new kakao.maps.Marker({ position: pos, map, image: markerImage(color), title: `${kindName(r.kind)} ${r.note || ""}` });
       // 마커 옆 작은 라벨: 신고 일시(+전화번호 뒷자리), 줄바꿈 후 완료 일시
       const phone = r.reporter_phone4 ? ` ☎${esc(r.reporter_phone4)}` : "";
-      const label = new kakao.maps.CustomOverlay({
-        position: pos, xAnchor: 0, yAnchor: 0.5, zIndex: 1,
-        content: `<div class="pin-label">${t("pinReport", { t: md(r.created_at) })}${phone}${r.done && r.done_at ? `<br><span class="ok">${t("pinDone", { t: md(r.done_at) })}</span>` : ""}</div>`,
-      });
+      // 라벨도 눌리게 해서 작은 마커를 정확히 못 눌러도 글자를 눌러 열 수 있다
+      const el = document.createElement("div");
+      el.className = "pin-label";
+      el.innerHTML = `${t("pinReport", { t: md(r.created_at) })}${phone}${r.done && r.done_at ? `<br><span class="ok">${t("pinDone", { t: md(r.done_at) })}</span>` : ""}`;
+      el.onclick = () => openInfo(r, marker);
+      const label = new kakao.maps.CustomOverlay({ position: pos, xAnchor: 0, yAnchor: 0.5, zIndex: 1, content: el, clickable: true });
       label.setMap(map);
       kakao.maps.event.addListener(marker, "click", () => openInfo(r, marker));
       markers[r.id] = { setMap(m) { marker.setMap(m); label.setMap(m); } };
@@ -392,11 +395,13 @@
   // ---------- 설정 / 사용 설명서 ----------
   const openModal = (id) => { $(id).hidden = false; };
   const closeModal = (id) => { $(id).hidden = true; };
-  for (const [wrap, closeBtn] of [["settingsWrap", "settingsClose"], ["helpWrap", "helpClose"]]) {
+  const MODALS = [["settingsWrap", "settingsClose"], ["helpWrap", "helpClose"], ["infoWrap", "infoClose"]];
+  for (const [wrap, closeBtn] of MODALS) {
     $(closeBtn).onclick = () => closeModal(wrap);
     $(wrap).onclick = (e) => { if (e.target === $(wrap)) closeModal(wrap); };
   }
-  document.addEventListener("keydown", (e) => { if (e.key === "Escape") { closeModal("settingsWrap"); closeModal("helpWrap"); } });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape") MODALS.forEach(([wrap]) => closeModal(wrap)); });
+  $("btnInfo").onclick = () => openModal("infoWrap");
   $("btnSettings").onclick = () => {
     document.querySelector(`input[name="lang"][value="${lang}"]`).checked = true;
     openModal("settingsWrap");
@@ -409,6 +414,31 @@
     $("helpBody").innerHTML = t("helpDoc").map((s) => `<h4>${esc(s.h)}</h4><ul>${s.p.map((x) => `<li>${esc(x)}</li>`).join("")}</ul>`).join("");
   }
 
+  // 말벌 사진: Wikimedia Commons (각 사진의 작성자·라이선스를 사진 아래에 표시)
+  const cm = (path) => `https://upload.wikimedia.org/wikipedia/commons/thumb/${path}`;
+  const WASP_IMG = {
+    mandarinia: { src: cm("9/94/Vespa_mandarinia_japonica.jpg/500px-Vespa_mandarinia_japonica.jpg"), file: "Vespa_mandarinia_japonica.jpg", by: "Michael J. Trout", lic: "CC BY-SA 4.0" },
+    velutina: { src: cm("c/cc/Asian_hornet_%28Vespa_velutina%29.jpg/500px-Asian_hornet_%28Vespa_velutina%29.jpg"), file: "Asian_hornet_(Vespa_velutina).jpg", by: "Charles J. Sharp", lic: "CC BY-SA 4.0" },
+    crabro: { src: cm("3/36/European_hornet_090621.jpg/500px-European_hornet_090621.jpg"), file: "European_hornet_090621.jpg", by: "Aconcagua", lic: "CC BY-SA 3.0" },
+    simillima: { src: cm("3/31/Vespa_simillima_xanthoptera01.jpg/500px-Vespa_simillima_xanthoptera01.jpg"), file: "Vespa_simillima_xanthoptera01.jpg", by: "Takahashi", lic: "CC BY-SA 3.0" },
+    analis: { src: cm("1/12/Vespa_analis_insularis.jpg/500px-Vespa_analis_insularis.jpg"), file: "Vespa_analis_insularis.jpg", by: "Toshihiro Gamo", lic: "CC BY 2.0" },
+    polistes: { src: cm("1/10/Paper_wasp_%28polistes_wattii%29.jpg/500px-Paper_wasp_%28polistes_wattii%29.jpg"), file: "Paper_wasp_(polistes_wattii).jpg", by: "Charles J. Sharp", lic: "CC BY-SA 3.0" },
+  };
+
+  function renderInfo() {
+    const list = (s) => `<${s.ordered ? "ol" : "ul"}>${s.p.map((x) => `<li>${esc(x)}</li>`).join("")}</${s.ordered ? "ol" : "ul"}>`;
+    const wasps = () => t("waspList").map((w) => {
+      const im = WASP_IMG[w.id];
+      return `<div class="wasp"><div class="ph"><img src="${im.src}" alt="${esc(w.name)}" loading="lazy" onerror="this.style.visibility='hidden'">
+        <small><a href="https://commons.wikimedia.org/wiki/File:${im.file}" target="_blank" rel="noopener">${esc(t("photoCredit"))}: ${esc(im.by)} · ${im.lic}</a></small></div>
+        <div class="tx"><b>${esc(w.name)}</b> <i>${esc(w.sci)}</i><p>${esc(w.desc)}</p></div></div>`;
+    }).join("");
+    $("infoBody").innerHTML = t("infoSections").map((s) => s.species
+      ? `<section class="info-sec"><h4>${esc(s.h)}</h4><p class="tip">${esc(s.tip)}</p>${wasps()}</section>`
+      : `<section class="info-sec${s.danger ? " danger" : ""}"><h4>${esc(s.h)}</h4>${list(s)}</section>`).join("")
+      + `<p class="info-note">${esc(t("infoNote"))}</p>`;
+  }
+
   // data-i18n(글자) / data-i18n-ph(입력 예시) / data-i18n-aria(접근성 이름)를 현재 언어로 채우고 동적 화면을 다시 그린다
   function applyLang() {
     document.documentElement.lang = lang;
@@ -417,7 +447,7 @@
     document.querySelectorAll("[data-i18n-ph]").forEach((el) => { el.placeholder = t(el.dataset.i18nPh); });
     document.querySelectorAll("[data-i18n-aria]").forEach((el) => { el.setAttribute("aria-label", t(el.dataset.i18nAria)); });
     if (mapMsgKey) $("mapMsg").innerHTML = t(mapMsgKey);
-    renderPos(); renderStats(); renderPhotos(); renderHelp();
+    renderPos(); renderStats(); renderPhotos(); renderHelp(); renderInfo();
     setDay(day, false); renderList(); renderMarkers();
   }
 

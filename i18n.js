@@ -42,6 +42,52 @@ window.I18N = {
     delConfirm: "이 신고를 삭제할까요? 삭제하면 되돌릴 수 없습니다.", delFail: "삭제하지 못했습니다. 잠시 후 다시 시도해 주세요.",
     doneFail: "처리 완료 저장에 실패했습니다. 이미 처리된 신고일 수 있습니다.",
 
+    infoBtn: "벌 안전 가이드", infoTitle: "벌 안전 가이드", photoCredit: "사진",
+    infoNote: "이 내용은 일반적인 안내이며 의사의 진단·치료를 대신하지 않습니다. 증상이 심하거나 불안하면 119 또는 가까운 병원을 이용하세요.",
+    infoSections: [
+      { h: "🩹 벌에 쏘였을 때 응급처치", ordered: true, p: [
+        "침착하게 그 자리를 벗어납니다. 벌이 따라오면 손을 휘두르지 말고 머리를 감싼 채 낮은 자세로 천천히 멀어지세요. 건물이나 차 안으로 피하는 것이 좋습니다.",
+        "침이 박혀 있으면 신용카드 같은 납작한 물건으로 옆으로 긁어 빼냅니다. (꿀벌은 침이 남지만 말벌은 대개 남지 않습니다.) 핀셋으로 집거나 짜지 마세요. 독이 더 들어갈 수 있습니다.",
+        "쏘인 곳을 흐르는 물과 비누로 깨끗이 씻습니다.",
+        "수건으로 감싼 얼음주머니로 10~15분 냉찜질하면 통증과 부기가 줄어듭니다.",
+        "부을 수 있으니 반지·시계·팔찌는 미리 빼 둡니다.",
+        "가려우면 긁지 말고 항히스타민제나 진통제를 설명서대로 사용합니다.",
+        "쏘인 뒤 1시간 정도는 혼자 두지 말고 몸 상태를 지켜보세요. 이후에도 증상이 점점 심해지면 진료를 받으세요." ] },
+      { h: "🚫 이렇게는 하지 마세요", p: [
+        "된장·치약·소주·침을 바르는 민간요법",
+        "입으로 독을 빨아내기, 쏘인 곳을 문지르거나 쥐어짜기",
+        "벌이 있는 곳에서 사진을 찍거나 지체하기" ] },
+      { h: "🚨 이런 증상이면 즉시 119", danger: true, p: [
+        "숨쉬기 힘들거나 쌕쌕거림, 목이 조이는 느낌",
+        "얼굴·입술·혀·목이 붓는 경우",
+        "온몸 두드러기, 어지러움, 식은땀, 창백함, 의식이 흐려짐",
+        "구토·복통·설사가 생긴 경우",
+        "여러 방 쏘였거나(특히 머리·목), 어린이·노약자·심장·호흡기 질환이 있는 경우",
+        "전에 벌에 쏘여 심하게 반응한 적이 있다면 바로 119. 처방받은 에피네프린 자동주사기가 있으면 먼저 사용하세요.",
+        "119를 기다리는 동안: 평평한 곳에 눕고 다리를 높입니다. 숨쉬기 힘들거나 구토하면 상체를 세우거나 옆으로 누우세요. 혼자 걷거나 운전하지 마세요." ] },
+      { species: true, h: "🐝 주요 말벌 알아보기",
+        tip: "크기, 가슴 색, 배 줄무늬, 집의 모양과 위치로 구별합니다. 헷갈리면 사진을 찍어 신고에 함께 올려 주세요." },
+      { h: "🛡 예방과 벌집을 발견했을 때", p: [
+        "말벌은 8~10월에 가장 활발합니다. 성묘·벌초·등산·농작업 때 특히 조심하세요.",
+        "어두운 색 옷, 향수·향 강한 화장품, 단 음료는 벌을 끌어들일 수 있습니다. 밝은 색 옷에 긴소매가 좋습니다.",
+        "벌집을 발견하면 가까이 가거나 돌을 던지거나 직접 없애려 하지 말고, 이 앱으로 위치를 신고하세요.",
+        "벌집을 건드렸다면 머리를 감싸고 최대한 빨리 멀리 벗어나세요." ] },
+    ],
+    waspList: [
+      { id: "mandarinia", name: "장수말벌", sci: "Vespa mandarinia",
+        desc: "국내에서 가장 큰 말벌입니다. 머리가 주황색이고 배에 굵은 주황·갈색 줄무늬가 있습니다. 땅속이나 나무 구멍에 집을 짓고, 독이 강하며 한꺼번에 많이 공격할 수 있어 가장 위험합니다." },
+      { id: "velutina", name: "등검은말벌", sci: "Vespa velutina nigrithorax",
+        desc: "외래종으로 가슴(등)이 검고, 배는 짙은 갈색에 노란 띠가 한 줄 보이며 다리 끝이 노랗습니다. 높은 나무나 건물 처마에 둥근 공 모양의 큰 집을 짓고 도시 주변에서 많이 신고됩니다. 토종 꿀벌을 잡아먹어 피해가 크고 생태계교란 생물로 지정돼 있습니다." },
+      { id: "crabro", name: "말벌", sci: "Vespa crabro",
+        desc: "황갈색 몸에 노란 줄무늬가 있는 중대형 말벌입니다. 나무 구멍, 지붕 밑, 벽 틈 등에 집을 짓고, 집을 건드리면 여럿이 공격합니다. (사진은 같은 종의 다른 지역 개체입니다.)" },
+      { id: "simillima", name: "털보말벌", sci: "Vespa simillima",
+        desc: "몸에 가는 털이 많고 배가 노란 바탕에 검은 띠가 있습니다. 처마 밑이나 나무, 땅속 등에 집을 짓고 가을에 개체 수가 많아집니다." },
+      { id: "analis", name: "좀말벌", sci: "Vespa analis",
+        desc: "가슴이 검고 배 뒤쪽이 노란 말벌입니다. 몸집이 비교적 작고, 처마나 나뭇가지에 공 모양의 집을 짓습니다." },
+      { id: "polistes", name: "쌍살벌", sci: "Polistes",
+        desc: "허리가 가늘고 긴 다리를 늘어뜨리고 날아다닙니다. 집은 뒤집힌 우산 모양으로 벌방이 그대로 보이며 처마 밑·화단·나뭇가지에 작게 짓습니다. 말벌보다 온순하지만 집을 건드리면 쏩니다." },
+    ],
+
     helpTitle: "사용 설명서",
     helpDoc: [
       { h: "1. 신고하는 방법", p: [
@@ -66,6 +112,7 @@ window.I18N = {
         "테스트 기간에는 목록의 ‘삭제’ 버튼으로 신고를 삭제할 수 있습니다. (추후 비밀번호가 추가될 예정입니다.)",
         "전화번호 뒷자리는 지도 마커에 표시되어 누구나 볼 수 있습니다.",
         "벌집을 직접 건드리지 마세요. 위급한 상황이면 119에 먼저 연락하세요.",
+        "상단의 ‘벌 안전 가이드’ 버튼에서 벌에 쏘였을 때 응급처치와 주요 말벌 사진·설명을 볼 수 있습니다.",
         "화면 오른쪽 위 ⚙ 설정에서 한국어 / English를 바꿀 수 있습니다." ] },
     ],
   },
@@ -112,6 +159,52 @@ window.I18N = {
     delConfirm: "Delete this report? This cannot be undone.", delFail: "Could not delete. Please try again shortly.",
     doneFail: "Could not save. This report may already be resolved.",
 
+    infoBtn: "Wasp safety guide", infoTitle: "Wasp safety guide", photoCredit: "Photo",
+    infoNote: "This is general guidance and does not replace a doctor's diagnosis or treatment. If symptoms are severe or you are worried, call 119 or go to the nearest hospital.",
+    infoSections: [
+      { h: "🩹 First aid for a sting", ordered: true, p: [
+        "Calmly leave the spot. If wasps follow you, do not swing your arms; cover your head and move away slowly and low. Getting inside a building or car helps.",
+        "If a stinger is stuck in the skin, scrape it sideways with something flat like a credit card. (Honey bees leave the stinger; wasps usually do not.) Do not pinch or squeeze it with tweezers — more venom may be released.",
+        "Wash the sting with running water and soap.",
+        "Apply a cold pack wrapped in a towel for 10–15 minutes to ease pain and swelling.",
+        "Take off rings, watches and bracelets before the area swells.",
+        "If it itches, do not scratch; use an antihistamine or pain reliever as directed on the label.",
+        "Stay with someone and watch how you feel for about an hour. See a doctor if symptoms keep getting worse afterwards." ] },
+      { h: "🚫 What not to do", p: [
+        "Home remedies such as soybean paste, toothpaste, liquor or saliva",
+        "Sucking out the venom, or rubbing or squeezing the sting",
+        "Lingering or taking photos near the wasps" ] },
+      { h: "🚨 Call 119 right away if", danger: true, p: [
+        "Trouble breathing, wheezing, or a tight throat",
+        "Swelling of the face, lips, tongue or throat",
+        "Hives all over, dizziness, cold sweat, pale skin, or feeling faint",
+        "Vomiting, stomach pain or diarrhea",
+        "Many stings (especially on the head or neck), or the person is a child, elderly, or has heart or lung disease",
+        "A past severe reaction to stings: call 119 immediately. If you have a prescribed epinephrine auto-injector, use it first.",
+        "While waiting for 119: lie flat and raise the legs. If breathing is hard or you vomit, sit up or lie on your side. Do not walk around or drive." ] },
+      { species: true, h: "🐝 Common wasps",
+        tip: "Tell them apart by size, chest color, abdomen stripes, and the shape and location of the nest. If unsure, take a photo and attach it to your report." },
+      { h: "🛡 Prevention and finding a nest", p: [
+        "Wasps are most active from August to October. Be extra careful when visiting graves, trimming grass, hiking or farming.",
+        "Dark clothes, perfume, strongly scented cosmetics and sweet drinks can attract wasps. Light-colored long sleeves are better.",
+        "If you find a nest, do not approach it, throw things at it or try to remove it yourself — report its location with this app.",
+        "If you disturbed a nest, cover your head and get far away as fast as you can." ] },
+    ],
+    waspList: [
+      { id: "mandarinia", name: "Asian giant hornet", sci: "Vespa mandarinia",
+        desc: "The largest hornet in Korea. Orange head and thick orange-brown stripes on the abdomen. Nests underground or in tree holes. Its venom is strong and many can attack at once, making it the most dangerous." },
+      { id: "velutina", name: "Yellow-legged hornet", sci: "Vespa velutina nigrithorax",
+        desc: "An invasive species with a black chest, a dark brown abdomen with a single yellow band, and yellow leg tips. Builds large round nests high in trees or under building eaves and is often reported in cities. It preys on native honey bees and is designated as an ecosystem-disturbing species." },
+      { id: "crabro", name: "European hornet", sci: "Vespa crabro",
+        desc: "A medium-to-large hornet with a yellow-brown body and yellow stripes. Nests in tree holes, under roofs and in wall gaps, and attacks in numbers if the nest is disturbed. (The photo shows the same species from another region.)" },
+      { id: "simillima", name: "Hairy hornet", sci: "Vespa simillima",
+        desc: "Covered in fine hairs, with a yellow abdomen banded in black. Nests under eaves, in trees or underground, and numbers peak in autumn." },
+      { id: "analis", name: "Yellow-vented hornet", sci: "Vespa analis",
+        desc: "A hornet with a black chest and a yellow rear abdomen. Relatively small; builds ball-shaped nests under eaves or on branches." },
+      { id: "polistes", name: "Paper wasp", sci: "Polistes",
+        desc: "Slender waist, flies with long legs dangling. The nest is an upside-down umbrella with the cells visible, built small under eaves, in flower beds or on branches. Calmer than hornets, but it stings if the nest is disturbed." },
+    ],
+
     helpTitle: "User guide",
     helpDoc: [
       { h: "1. How to report", p: [
@@ -136,6 +229,7 @@ window.I18N = {
         "During the test period, the “Delete” button removes a report. (A password will be added later.)",
         "The phone last 4 digits are shown on the map markers and can be seen by anyone.",
         "Do not touch a nest yourself. In an emergency, call 119 first.",
+        "The “Wasp safety guide” button at the top has first aid for stings and photos and descriptions of common wasps.",
         "Switch between 한국어 / English in ⚙ Settings at the top right." ] },
     ],
   },
