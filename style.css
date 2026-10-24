@@ -52,6 +52,10 @@ input[type=text]{width:100%;margin-top:4px;padding:10px;border:1px solid var(--l
 .item .acts{display:flex;gap:8px;margin-top:8px}
 .item .acts .btn{padding:6px 10px;font-size:13px}
 .result{margin-top:6px;font-size:13px;color:var(--ok)}
+.datebar{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin:4px 0 8px}
+.datebar .btn{padding:8px 10px;font-size:14px}
+.datebar .btn.on{background:var(--main);border-color:var(--main);color:#fff}
+.datebar input[type=date]{flex:1 1 140px;min-width:0;padding:8px;border:1px solid var(--line);border-radius:8px;font:inherit;background:var(--bg);color:var(--ink)}
 .pager{display:flex;justify-content:center;gap:6px;margin-top:12px;flex-wrap:wrap}
 .pager button{min-width:36px;height:36px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);font:inherit;cursor:pointer}
 .pager button.on{background:var(--main);border-color:var(--main);color:#fff;font-weight:700}

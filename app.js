@@ -15,8 +15,15 @@
     },
     // 전화번호(reporter_phone4)는 공개 조회 대상이 아니므로 컬럼을 명시한다
     COLS: "id,kind,lat,lng,note,photo_urls,created_at,done,handler,done_at",
-    page(n) {
-      return this.req(`/rest/v1/wasp_reports?select=${this.COLS}&order=created_at.desc`, {
+    // day: 'YYYY-MM-DD'(브라우저 현지 시간 기준 하루). 비우면 전체
+    dayFilter(day) {
+      if (!day) return "";
+      const [y, m, d] = day.split("-").map(Number);
+      const from = new Date(y, m - 1, d), to = new Date(y, m - 1, d + 1);
+      return `&created_at=gte.${encodeURIComponent(from.toISOString())}&created_at=lt.${encodeURIComponent(to.toISOString())}`;
+    },
+    page(n, day) {
+      return this.req(`/rest/v1/wasp_reports?select=${this.COLS}&order=created_at.desc${this.dayFilter(day)}`, {
         withCount: true, headers: { Range: `${n * PAGE_SIZE}-${n * PAGE_SIZE + PAGE_SIZE - 1}`, Prefer: "count=exact" },
       });
     },
@@ -63,6 +70,7 @@
   const MAX_PHOTOS = 3;
   let map, pickMarker, picked = null, photos = [], doneTarget = null;
   let rows = [], pins = [], total = 0, pageNo = 0;
+  let day = ymd(new Date()); // 목록에 보여줄 날짜. ''이면 전체
   const markers = {};
 
   // ---------- 상단 현황 (방문 / 신고 / 처리완료) ----------
@@ -123,8 +131,8 @@
   // n: 이동할 페이지(0부터). 생략하면 현재 페이지를 다시 불러온다.
   async function refresh(n = pageNo) {
     try {
-      const [p, m, done] = await Promise.all([Store.page(n), Store.markers(), Store.count("&done=eq.true")]);
-      stats.reports = p.total; stats.done = done; renderStats();
+      const [p, m, all, done] = await Promise.all([Store.page(n, day), Store.markers(), Store.count(), Store.count("&done=eq.true")]);
+      stats.reports = all; stats.done = done; renderStats();
       // 마지막 페이지의 항목이 모두 사라진 경우(예: 삭제) 한 페이지 앞으로
       if (!p.data.length && n > 0 && p.total) return refresh(Math.ceil(p.total / PAGE_SIZE) - 1);
       rows = p.data; total = p.total; pins = m; pageNo = n;
@@ -205,15 +213,16 @@
     $("form").reset(); clearPhotos();
     picked = null; $("posText").textContent = "위치 미선택";
     if (pickMarker) { pickMarker.setMap(null); pickMarker = null; }
+    if (day) setDay(ymd(new Date()), false); // 새 신고가 보이도록 오늘로 이동
     await refresh(0); // 새 신고는 첫 페이지 맨 위에 나온다
     alert("신고가 접수되었습니다.");
   };
 
   // ---------- 목록 (날짜별) ----------
   function renderList() {
-    $("count").textContent = `(총 ${total}건)`;
+    $("count").textContent = `(${day ? day + " · " : "전체 · "}${total}건)`;
     renderPager();
-    if (!rows.length) { $("list").innerHTML = '<div class="empty">접수된 신고가 없습니다.</div>'; return; }
+    if (!rows.length) { $("list").innerHTML = `<div class="empty">${day ? "이 날짜에 접수된 신고가 없습니다." : "접수된 신고가 없습니다."}</div>`; return; }
     let html = "", cur = "";
     for (const r of rows) {
       const d = ymd(new Date(r.created_at));
@@ -233,6 +242,25 @@
     }
     $("list").innerHTML = html;
   }
+
+  // ---------- 날짜 선택 ----------
+  function setDay(d, reload = true) {
+    day = d; $("dayPick").value = d;
+    document.querySelectorAll("#datebar [data-day]").forEach((b) => {
+      b.classList.toggle("on", (b.dataset.day === "today" && d === ymd(new Date())) || (b.dataset.day === "all" && !d));
+    });
+    if (reload) refresh(0);
+  }
+  const shiftDay = (delta) => {
+    const [y, m, d] = (day || ymd(new Date())).split("-").map(Number);
+    setDay(ymd(new Date(y, m - 1, d + delta)));
+  };
+  $("dayPrev").onclick = () => shiftDay(-1);
+  $("dayNext").onclick = () => shiftDay(1);
+  $("dayToday").onclick = () => setDay(ymd(new Date()));
+  $("dayAll").onclick = () => setDay("");
+  $("dayPick").onchange = (e) => setDay(e.target.value); // 지우면 전체
+  setDay(day, false);
 
   function renderPager() {
     const pages = Math.ceil(total / PAGE_SIZE);
