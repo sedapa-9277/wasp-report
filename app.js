@@ -216,12 +216,12 @@
     return new Promise((resolve, reject) => {
       const img = new Image();
       img.onload = () => {
-        const max = 1280, k = Math.min(1, max / Math.max(img.width, img.height));
+        const max = 1024, k = Math.min(1, max / Math.max(img.width, img.height));
         const cv = document.createElement("canvas");
         cv.width = Math.round(img.width * k); cv.height = Math.round(img.height * k);
         cv.getContext("2d").drawImage(img, 0, 0, cv.width, cv.height);
         URL.revokeObjectURL(img.src);
-        cv.toBlob((b) => (b ? resolve({ blob: b, w: cv.width, h: cv.height }) : reject()), "image/jpeg", 0.8);
+        cv.toBlob((b) => (b ? resolve({ blob: b, w: cv.width, h: cv.height }) : reject()), "image/jpeg", 0.7);
       };
       img.onerror = reject;
       img.src = URL.createObjectURL(file);
