@@ -70,7 +70,8 @@
     visit() {
       const count = !sessionStorage.getItem("wasp_counted");
       sessionStorage.setItem("wasp_counted", "1");
-      return this.req("/rest/v1/rpc/wasp_hit_visit", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ p_count: count }) });
+      // { today, total } (오늘 / 누적)
+      return this.req("/rest/v1/rpc/wasp_visit_stats", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ p_count: count }) });
     },
   };
 
@@ -119,11 +120,12 @@
 
   // ---------- 상단 현황 ----------
   function renderStats() {
-    $("visit").innerHTML = stats.visit == null ? "" : `<span>${t("visitToday", { n: `<b>${stats.visit}</b>` })}</span>`;
+    $("visit").innerHTML = stats.visit == null ? "" :
+      `<span>${t("visitToday", { n: `<b>${stats.visit.today}</b>` })}</span><span>${t("visitTotal", { n: `<b>${stats.visit.total}</b>` })}</span>`;
     const chip = (label, v, cls = "") => `<div class="chip ${cls}">${label}<b>${v ?? "-"}</b></div>`;
     $("stats").innerHTML = chip(t("statAll"), stats.reports) + chip(t("statDone"), stats.done, "ok");
   }
-  Store.visit().then((n) => { stats.visit = n; renderStats(); }).catch(() => {});
+  Store.visit().then((v) => { stats.visit = v; renderStats(); }).catch(() => {});
 
   // ---------- 지도 ----------
   function setMapMsg(key) {

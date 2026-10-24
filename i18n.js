@@ -1,7 +1,7 @@
 // 한국어 / English 문구. 새 문구는 두 언어에 같은 키로 추가한다. {이름} 자리는 t("키", { 이름: 값 })로 채운다.
 window.I18N = {
   ko: {
-    title: "말벌 신고", appName: "말벌 위치 신고", visitToday: "오늘 방문 {n}명",
+    title: "말벌 신고", appName: "말벌 위치 신고", visitToday: "오늘 방문 {n}명", visitTotal: "누적 방문 {n}명",
     settings: "설정", help: "사용 설명서", close: "닫기", language: "언어", ok: "확인", cancel: "취소",
     mapSetting: "지도 표시", optLabels: "마커 옆에 신고·완료 일시 보기",
     filterAll: "전체", filterPending: "처리 대기", filterDone: "처리 완료", mapFilterLabel: "지도에 표시할 신고",
@@ -23,7 +23,7 @@ window.I18N = {
     size_le20: "20cm 이하", size_21to50: "21~50cm", size_ge51: "51cm 이상",
     pinCount: "개체수 {v}", pinSize: "벌집 크기 {v}",
     noteLabel: "위치 설명", noteOpt: "(선택)", notePh: "예) 전신주 12-345, ○○빌딩 뒤편",
-    phoneLabel: "신고자 전화번호 뒷자리", phoneHint: "(필수, 숫자 4자리)", phonePh: "예) 1234",
+    phoneLabel: "신고자 전화번호 뒷자리", phoneHint: "(숫자 4자리)", phonePh: "예) 1234",
     photoLabel: "사진", photoHint: "(선택, 최대 3장 · 30일 후 자동 삭제)", camera: "📷 촬영", gallery: "🖼 사진첩",
     photoDel: "사진 삭제", photoOrig: "원본 {s}", photoAlt: "신고 사진",
     submit: "신고 접수",
@@ -133,7 +133,7 @@ window.I18N = {
   },
 
   en: {
-    title: "Wasp Report", appName: "Wasp Location Report", visitToday: "Visitors today {n}",
+    title: "Wasp Report", appName: "Wasp Location Report", visitToday: "Visitors today {n}", visitTotal: "Total visitors {n}",
     settings: "Settings", help: "User guide", close: "Close", language: "Language", ok: "OK", cancel: "Cancel",
     mapSetting: "Map display", optLabels: "Show report / resolved times beside markers",
     filterAll: "All", filterPending: "Pending", filterDone: "Resolved", mapFilterLabel: "Reports shown on the map",
@@ -155,7 +155,7 @@ window.I18N = {
     size_le20: "20 cm or less", size_21to50: "21–50 cm", size_ge51: "51 cm or more",
     pinCount: "Count: {v}", pinSize: "Nest size: {v}",
     noteLabel: "Location details", noteOpt: "(optional)", notePh: "e.g. utility pole 12-345, behind ○○ building",
-    phoneLabel: "Reporter phone (last 4 digits)", phoneHint: "(required, 4 digits)", phonePh: "e.g. 1234",
+    phoneLabel: "Reporter phone (last 4 digits)", phoneHint: "(4 digits)", phonePh: "e.g. 1234",
     photoLabel: "Photos", photoHint: "(optional, up to 3 · auto-deleted after 30 days)", camera: "📷 Camera", gallery: "🖼 Gallery",
     photoDel: "Remove photo", photoOrig: "Original {s}", photoAlt: "Report photo",
     submit: "Submit report",
