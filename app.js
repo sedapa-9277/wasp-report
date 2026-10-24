@@ -182,6 +182,10 @@
       </div>`,
     });
     info.open(map, marker);
+    // 마커가 지도 위쪽에 있으면 팝업이 잘리므로, 마커가 지도 아래쪽 3분의 2 지점에 오도록 옮긴다
+    const h = $("map").clientHeight, y = map.getProjection().containerPointFromCoords(marker.getPosition()).y;
+    const want = h * 0.7;
+    if (y < want) map.panBy(0, y - want);
   }
 
   // n: 이동할 페이지(0부터). 생략하면 현재 페이지를 다시 불러온다.
