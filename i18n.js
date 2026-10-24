@@ -110,6 +110,7 @@ window.I18N = {
         "처리 시각은 자동으로 기록되며, 한 번 처리한 신고는 다시 바꿀 수 없습니다." ] },
       { h: "5. 알아두세요", p: [
         "테스트 기간에는 목록의 ‘삭제’ 버튼으로 신고를 삭제할 수 있습니다. (추후 비밀번호가 추가될 예정입니다.)",
+        "신고 위치의 주소(시·구·동)는 지도 좌표로 자동 표시됩니다.",
         "전화번호 뒷자리는 지도 마커에 표시되어 누구나 볼 수 있습니다.",
         "벌집을 직접 건드리지 마세요. 위급한 상황이면 119에 먼저 연락하세요.",
         "상단의 ‘벌 안전 가이드’ 버튼에서 벌에 쏘였을 때 응급처치와 주요 말벌 사진·설명을 볼 수 있습니다.",
@@ -227,6 +228,7 @@ window.I18N = {
         "The time is recorded automatically, and a resolved report cannot be changed again." ] },
       { h: "5. Good to know", p: [
         "During the test period, the “Delete” button removes a report. (A password will be added later.)",
+        "The address of the report location (city, district, neighborhood) is filled in automatically from the map coordinates.",
         "The phone last 4 digits are shown on the map markers and can be seen by anyone.",
         "Do not touch a nest yourself. In an emergency, call 119 first.",
         "The “Wasp safety guide” button at the top has first aid for stings and photos and descriptions of common wasps.",

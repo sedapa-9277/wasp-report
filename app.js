@@ -22,7 +22,7 @@
       if (!opt.withCount) return data;
       return { data, total: +(res.headers.get("content-range") || "").split("/")[1] || 0 };
     },
-    COLS: "id,kind,lat,lng,note,photo_urls,created_at,done,handler,done_at,reporter_phone4",
+    COLS: "id,kind,lat,lng,note,photo_urls,created_at,done,handler,done_at,reporter_phone4,address",
     // day: 'YYYY-MM-DD'(브라우저 현지 시간 기준 하루). 비우면 전체
     dayFilter(day) {
       if (!day) return "";
@@ -42,7 +42,7 @@
       return +(res.headers.get("content-range") || "").split("/")[1] || 0;
     },
     // 마커용. reporter_phone4(전화번호 뒷자리)는 마커 표시를 위해 공개 조회를 허용해 둔 컬럼이다.
-    markers() { return this.req("/rest/v1/wasp_reports?select=id,kind,lat,lng,note,done,created_at,done_at,handler,photo_urls,reporter_phone4&order=created_at.desc&limit=1000"); },
+    markers() { return this.req("/rest/v1/wasp_reports?select=id,kind,lat,lng,note,done,created_at,done_at,handler,photo_urls,reporter_phone4,address&order=created_at.desc&limit=1000"); },
     async uploadPhoto(blob) {
       const name = `${crypto.randomUUID()}.jpg`;
       await this.req(`/storage/v1/object/wasp-photos/${name}`, { method: "POST", headers: { "Content-Type": "image/jpeg" }, body: blob });
@@ -126,7 +126,7 @@
   function loadMap() {
     if (!CFG.KAKAO_JS_KEY || CFG.KAKAO_JS_KEY.startsWith("여기에")) return setMapMsg("mapNoKey");
     const s = document.createElement("script");
-    s.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${CFG.KAKAO_JS_KEY}&autoload=false`;
+    s.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${CFG.KAKAO_JS_KEY}&autoload=false&libraries=services`;
     s.onerror = () => setMapMsg("mapFail");
     s.onload = () => kakao.maps.load(initMap);
     document.head.appendChild(s);
@@ -178,8 +178,7 @@
     Object.values(markers).forEach((m) => m.setMap(null));
     pins.forEach((r) => {
       const pos = new kakao.maps.LatLng(r.lat, r.lng);
-      const color = r.done ? "#2b8a3e" : r.kind !== "sighting" ? "#d9480f" : "#e67700";
-      const marker = new kakao.maps.Marker({ position: pos, map, image: markerImage(color), clickable: true, title: `${kindName(r.kind)} ${r.note || ""}` });
+      const marker = new kakao.maps.Marker({ position: pos, map, image: markerImage(pinColor(r)), clickable: true, title: `${kindName(r.kind)} ${r.note || ""}` });
       // 마커 옆 작은 라벨: 신고 일시(+전화번호 뒷자리), 줄바꿈 후 완료 일시
       const phone = r.reporter_phone4 ? ` ☎${esc(r.reporter_phone4)}` : "";
       // 라벨은 터치가 통과하게 두어(pointer-events:none) 옆 마커를 가리지 않는다
@@ -191,28 +190,68 @@
       kakao.maps.event.addListener(marker, "click", () => openInfo(r, marker));
       markers[r.id] = { marker, setMap(m) { marker.setMap(m); label.setMap(m); } };
     });
-    if (info) { info.close(); info = null; } // 목록이 갱신되면 열려 있던 팝업은 닫는다
+    closeInfo(); // 목록이 갱신되면 열려 있던 팝업은 닫는다
   }
 
-  // 마커를 누르면 해당 신고 내용을 팝업으로 보여준다
-  function openInfo(r, marker) {
-    if (info) info.close();
-    const imgs = (r.photo_urls || []).map((u) => `<a href="${esc(u)}" class="zoom"><img src="${esc(u)}" alt="${esc(t("photoAlt"))}"></a>`).join("");
-    info = new kakao.maps.InfoWindow({
-      removable: true, zIndex: 20,
-      content: `<div class="pin-info">
-        <div><span class="tag ${r.kind}">${kindName(r.kind)}</span> <b>${esc(r.note || t("descNone"))}</b></div>
-        <div class="row">${t("pinReport", { t: full(r.created_at) })}</div>
-        ${r.reporter_phone4 ? `<div class="row">${t("pinPhone", { p: esc(r.reporter_phone4) })}</div>` : ""}
-        ${r.done ? `<div class="row ok">${t("pinDone", { t: full(r.done_at) })}<br>${t("handlerLbl")} ${esc(r.handler || "-")}</div>` : `<div class="row">${t("pinPending")}</div>`}
-        ${imgs ? `<div class="ph">${imgs}</div>` : ""}
-      </div>`,
+  const pinColor = (r) => (r.done ? "#2b8a3e" : r.kind !== "sighting" ? "#d9480f" : "#e67700");
+
+  // ---------- 주소 (카카오 좌표→행정구역 변환: 시·구·동) ----------
+  const addrCache = new Map();
+  const addrOf = (r) => r.address || addrCache.get(r.id) || "";
+  const addrHtml = (r) => (addrOf(r) ? `📍 ${esc(addrOf(r))}` : "");
+
+  function geocode(lat, lng) {
+    return new Promise((resolve) => {
+      if (!window.kakao?.maps?.services) return resolve(null);
+      const timer = setTimeout(() => resolve(null), 4000);
+      new kakao.maps.services.Geocoder().coord2RegionCode(lng, lat, (res, status) => {
+        clearTimeout(timer);
+        if (status !== kakao.maps.services.Status.OK || !res.length) return resolve(null);
+        const reg = res.find((x) => x.region_type === "B") || res[0]; // 법정동 우선
+        resolve(reg.address_name || null);
+      });
     });
-    info.open(map, marker);
-    // 마커가 지도 위쪽에 있으면 팝업이 잘리므로 마커가 아래쪽에 오도록 지도를 옮긴다
-    const h = $("map").clientHeight, y = map.getProjection().containerPointFromCoords(marker.getPosition()).y;
-    const want = Math.min(h - 30, Math.max(h * 0.7, 210)); // 팝업 높이(약 170~200px)만큼 위 공간 확보
-    if (y < want) map.panBy(0, y - want);
+  }
+
+  // 주소가 저장되지 않은 신고(이전에 접수된 것)는 화면에 보일 때 좌표로 주소를 구해 채운다
+  async function fillAddresses(list) {
+    if (!window.kakao?.maps?.services) return;
+    for (const r of list) {
+      if (r.address || addrCache.has(r.id)) continue;
+      const a = await geocode(r.lat, r.lng);
+      if (!a) continue;
+      addrCache.set(r.id, a);
+      document.querySelectorAll(`[data-addr="${r.id}"]`).forEach((el) => { el.innerHTML = addrHtml(r); });
+    }
+  }
+
+  // ---------- 마커를 누르면 나오는 상세 팝업 ----------
+  // 카카오 기본 InfoWindow는 테두리가 흐려서, 마커 색과 같은 굵은 테두리의 팝업을 직접 만든다.
+  function closeInfo() { if (info) { info.setMap(null); info = null; } }
+
+  function openInfo(r, marker) {
+    closeInfo();
+    const imgs = (r.photo_urls || []).map((u) => `<a href="${esc(u)}" class="zoom"><img src="${esc(u)}" alt="${esc(t("photoAlt"))}"></a>`).join("");
+    const el = document.createElement("div");
+    el.className = "pop-wrap";
+    el.innerHTML = `<div class="pin-pop" style="--pc:${pinColor(r)}">
+      <button type="button" class="pop-x" aria-label="${esc(t("close"))}">×</button>
+      <div class="pop-head"><span class="tag ${r.kind}">${kindName(r.kind)}</span> <b>${esc(r.note || t("descNone"))}</b></div>
+      <div class="row addr" data-addr="${r.id}">${addrHtml(r)}</div>
+      <div class="row">${t("pinReport", { t: full(r.created_at) })}</div>
+      ${r.reporter_phone4 ? `<div class="row">${t("pinPhone", { p: esc(r.reporter_phone4) })}</div>` : ""}
+      ${r.done ? `<div class="row ok">${t("pinDone", { t: full(r.done_at) })}<br>${t("handlerLbl")} ${esc(r.handler || "-")}</div>` : `<div class="row">${t("pinPending")}</div>`}
+      ${imgs ? `<div class="ph">${imgs}</div>` : ""}
+    </div>`;
+    el.querySelector(".pop-x").onclick = closeInfo;
+    // 마커 위쪽에 띄운다. clickable:true라서 팝업을 눌러도 지도 클릭(위치 지정)이 일어나지 않는다.
+    info = new kakao.maps.CustomOverlay({ position: marker.getPosition(), content: el, xAnchor: 0.5, yAnchor: 1, zIndex: 20, clickable: true });
+    info.setMap(map);
+    // 팝업이 지도 위쪽에서 잘리지 않도록, 팝업 높이만큼 위 공간이 생기게 지도를 옮긴다
+    const y = map.getProjection().containerPointFromCoords(marker.getPosition()).y;
+    const need = el.offsetHeight + 12;
+    if (y < need) map.panBy(0, y - need);
+    fillAddresses([r]);
   }
 
   // n: 이동할 페이지(0부터). 생략하면 현재 페이지를 다시 불러온다.
@@ -296,7 +335,8 @@
     const btn = e.submitter; btn.disabled = true;
     try {
       const photo_urls = await Promise.all(photos.map((p) => Store.uploadPhoto(p.blob)));
-      await Store.add({ kind, lat: picked.lat, lng: picked.lng, note: $("note").value.trim() || null, photo_urls, reporter_phone4: phone4 });
+      const address = await geocode(picked.lat, picked.lng); // 시·구·동. 구하지 못해도 신고는 접수된다
+      await Store.add({ kind, lat: picked.lat, lng: picked.lng, note: $("note").value.trim() || null, photo_urls, reporter_phone4: phone4, address });
     } catch { btn.disabled = false; return notify(t("submitFail")); }
     btn.disabled = false;
     $("form").reset(); clearPhotos();
@@ -321,6 +361,7 @@
           <span><span class="tag ${r.kind}">${kindName(r.kind)}</span> ${esc(r.note || t("descNone"))}</span>
           <span class="tag ${r.done ? "done" : ""}" style="${r.done ? "" : "background:#868e96"}">${t(r.done ? "statusDone" : "statusNew")}</span>
         </div>
+        <div class="addr" data-addr="${r.id}">${addrHtml(r)}</div>
         <div class="meta">${t("reportedAt", { t: hm(new Date(r.created_at)) })}${r.reporter_phone4 ? ` · ${t("pinPhone", { p: esc(r.reporter_phone4) })}` : ""}</div>
         ${r.photo_urls?.length ? `<div class="thumbs">${r.photo_urls.map((u) => `<a href="${esc(u)}" class="zoom"><img src="${esc(u)}" alt="${esc(t("photoAlt"))}" loading="lazy"></a>`).join("")}</div>` : ""}
         ${r.done ? `<div class="result">✔ ${t("handlerLbl")} ${esc(r.handler)} · ${full(r.done_at)}</div>` : ""}
@@ -331,6 +372,7 @@
         </div></div>`;
     }
     $("list").innerHTML = html;
+    fillAddresses(rows);
   }
 
   // ---------- 날짜 선택 ----------
