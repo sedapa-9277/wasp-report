@@ -3,6 +3,9 @@ window.I18N = {
   ko: {
     title: "말벌 신고", appName: "말벌 위치 신고", visitToday: "오늘 방문 {n}명",
     settings: "설정", help: "사용 설명서", close: "닫기", language: "언어", ok: "확인", cancel: "취소",
+    mapSetting: "지도 표시", optLabels: "마커 옆에 신고·완료 일시 보기",
+    filterAll: "전체", filterPending: "처리 대기", filterDone: "처리 완료", mapFilterLabel: "지도에 표시할 신고",
+    reportNo: "No.{n}",
     mapLoading: "지도를 불러오는 중…",
     mapNoKey: "config.js 에 카카오 JavaScript 키를 입력하면<br>지도가 표시됩니다.<br>(지도 없이도 '현위치 사용'으로 신고할 수 있어요)",
     mapFail: "지도 SDK를 불러오지 못했습니다. 키와 등록된 도메인을 확인하세요.",
@@ -100,6 +103,8 @@ window.I18N = {
         "마커 색: 주황 = 벌 목격, 빨강 = 벌집(또는 목격+벌집), 초록 = 처리완료.",
         "마커 옆 글자는 신고 시각과 전화번호 뒷자리이고, 처리된 신고는 완료 시각도 함께 나옵니다.",
         "마커를 누르면 신고 내용, 처리 정보, 사진을 팝업으로 볼 수 있습니다.",
+        "지도 왼쪽 위의 ‘전체 / 처리 대기 / 처리 완료’ 버튼으로 보고 싶은 신고만 지도에 표시할 수 있습니다.",
+        "마커 옆 글자가 복잡하면 ⚙ 설정에서 ‘마커 옆에 신고·완료 일시 보기’를 끌 수 있습니다.",
         "지도 오른쪽 위의 ‘지도 / 스카이뷰’ 버튼으로 일반 지도와 위성 지도를 바꿀 수 있습니다." ] },
       { h: "3. 신고 목록", p: [
         "‘‹ ›’ 버튼으로 하루씩 이동하고, 날짜를 눌러 달력에서 고를 수 있습니다. ‘오늘’은 오늘로, ‘전체’는 모든 날짜를 봅니다.",
@@ -121,6 +126,9 @@ window.I18N = {
   en: {
     title: "Wasp Report", appName: "Wasp Location Report", visitToday: "Visitors today {n}",
     settings: "Settings", help: "User guide", close: "Close", language: "Language", ok: "OK", cancel: "Cancel",
+    mapSetting: "Map display", optLabels: "Show report / resolved times beside markers",
+    filterAll: "All", filterPending: "Pending", filterDone: "Resolved", mapFilterLabel: "Reports shown on the map",
+    reportNo: "#{n}",
     mapLoading: "Loading map…",
     mapNoKey: "Enter your Kakao JavaScript key in config.js<br>to show the map.<br>(You can still report with “Use my location”.)",
     mapFail: "Could not load the map SDK. Check the key and the registered domain.",
@@ -218,6 +226,8 @@ window.I18N = {
         "Marker colors: orange = sighting, red = nest (or sighting + nest), green = resolved.",
         "The text beside a marker shows the report time and the phone last 4 digits; resolved reports also show the resolved time.",
         "Tap a marker to see the report, handling details and photos in a popup.",
+        "Use the “All / Pending / Resolved” buttons at the top left of the map to show only the reports you want.",
+        "If the text beside markers is crowded, turn off “Show report / resolved times beside markers” in ⚙ Settings.",
         "Use the “Map / Skyview” buttons at the top right of the map to switch to satellite view." ] },
       { h: "3. Report list", p: [
         "Use ‹ › to move one day at a time, or tap the date to pick from a calendar. “Today” jumps to today and “All” shows every date.",

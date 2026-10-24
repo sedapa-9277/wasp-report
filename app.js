@@ -22,7 +22,7 @@
       if (!opt.withCount) return data;
       return { data, total: +(res.headers.get("content-range") || "").split("/")[1] || 0 };
     },
-    COLS: "id,kind,lat,lng,note,photo_urls,created_at,done,handler,done_at,reporter_phone4,address",
+    COLS: "id,report_no,kind,lat,lng,note,photo_urls,created_at,done,handler,done_at,reporter_phone4,address",
     // day: 'YYYY-MM-DD'(브라우저 현지 시간 기준 하루). 비우면 전체
     dayFilter(day) {
       if (!day) return "";
@@ -42,7 +42,7 @@
       return +(res.headers.get("content-range") || "").split("/")[1] || 0;
     },
     // 마커용. reporter_phone4(전화번호 뒷자리)는 마커 표시를 위해 공개 조회를 허용해 둔 컬럼이다.
-    markers() { return this.req("/rest/v1/wasp_reports?select=id,kind,lat,lng,note,done,created_at,done_at,handler,photo_urls,reporter_phone4,address&order=created_at.desc&limit=1000"); },
+    markers() { return this.req("/rest/v1/wasp_reports?select=id,report_no,kind,lat,lng,note,done,created_at,done_at,handler,photo_urls,reporter_phone4,address&order=created_at.desc&limit=1000"); },
     async uploadPhoto(blob) {
       const name = `${crypto.randomUUID()}.jpg`;
       await this.req(`/storage/v1/object/wasp-photos/${name}`, { method: "POST", headers: { "Content-Type": "image/jpeg" }, body: blob });
@@ -108,6 +108,9 @@
   let rows = [], pins = [], total = 0, pageNo = 0;
   let day = ymd(new Date()); // 목록에 보여줄 날짜. ''이면 전체
   const markers = {};
+  let mapFilter = "all"; // 지도에 보일 신고: all / pending / done
+  let showLabels = true; // 마커 옆 신고·완료 일시 표시 (설정)
+  try { showLabels = localStorage.getItem("wasp_labels") !== "0"; } catch {}
   const stats = { visit: null, reports: null, done: null };
 
   // ---------- 상단 현황 ----------
@@ -138,6 +141,15 @@
     map = new kakao.maps.Map($("map"), { center: new kakao.maps.LatLng(c.lat, c.lng), level: 4 });
     map.addControl(new kakao.maps.MapTypeControl(), kakao.maps.ControlPosition.TOPRIGHT); // 일반지도 / 스카이뷰(위성)
     map.addControl(new kakao.maps.ZoomControl(), kakao.maps.ControlPosition.RIGHT);
+    // 지도 왼쪽 위: 전체 / 처리 대기 / 처리 완료만 보기
+    const bar = document.createElement("div");
+    bar.id = "mapFilter"; bar.className = "map-filter";
+    bar.onclick = (e) => {
+      const b = e.target.closest("button[data-f]"); if (!b) return;
+      mapFilter = b.dataset.f; renderMapFilter(); renderMarkers();
+    };
+    $("map").appendChild(bar);
+    renderMapFilter();
     // 지도를 탭하면: 가까운(28px 이내) 신고가 있으면 그 신고를 열고, 없으면 신고 위치로 지정한다.
     // 손가락은 작은 마커를 정확히 누르기 어려워서 가장 가까운 마커를 대신 찾아 준다.
     kakao.maps.event.addListener(map, "click", (e) => {
@@ -173,22 +185,34 @@
     return new kakao.maps.MarkerImage("data:image/svg+xml," + encodeURIComponent(svg), new kakao.maps.Size(26, 26), { offset: new kakao.maps.Point(13, 13) });
   }
 
+  const pinVisible = (r) => mapFilter === "all" || (mapFilter === "done") === !!r.done;
+
+  function renderMapFilter() {
+    const bar = $("mapFilter"); if (!bar) return;
+    const n = { all: pins.length, pending: pins.filter((r) => !r.done).length, done: pins.filter((r) => r.done).length };
+    bar.setAttribute("role", "group"); bar.setAttribute("aria-label", t("mapFilterLabel"));
+    bar.innerHTML = [["all", "filterAll"], ["pending", "filterPending"], ["done", "filterDone"]]
+      .map(([f, k]) => `<button type="button" data-f="${f}" class="${mapFilter === f ? "on" : ""}">${t(k)} <b>${n[f]}</b></button>`).join("");
+  }
+
   function renderMarkers() {
     if (!map) return;
     Object.values(markers).forEach((m) => m.setMap(null));
-    pins.forEach((r) => {
+    for (const k of Object.keys(markers)) delete markers[k]; // 걸러진 신고는 탭 선택 대상에서도 빠진다
+    renderMapFilter();
+    pins.filter(pinVisible).forEach((r) => {
       const pos = new kakao.maps.LatLng(r.lat, r.lng);
       const marker = new kakao.maps.Marker({ position: pos, map, image: markerImage(pinColor(r)), clickable: true, title: `${kindName(r.kind)} ${r.note || ""}` });
       // 마커 옆 작은 라벨: 신고 일시(+전화번호 뒷자리), 줄바꿈 후 완료 일시
       const phone = r.reporter_phone4 ? ` ☎${esc(r.reporter_phone4)}` : "";
       // 라벨은 터치가 통과하게 두어(pointer-events:none) 옆 마커를 가리지 않는다
-      const label = new kakao.maps.CustomOverlay({
+      const label = showLabels ? new kakao.maps.CustomOverlay({
         position: pos, xAnchor: 0, yAnchor: 0.5, zIndex: 1,
         content: `<div class="pin-label">${t("pinReport", { t: md(r.created_at) })}${phone}${r.done && r.done_at ? `<br><span class="ok">${t("pinDone", { t: md(r.done_at) })}</span>` : ""}</div>`,
-      });
-      label.setMap(map);
+      }) : null;
+      if (label) label.setMap(map);
       kakao.maps.event.addListener(marker, "click", () => openInfo(r, marker));
-      markers[r.id] = { marker, setMap(m) { marker.setMap(m); label.setMap(m); } };
+      markers[r.id] = { marker, setMap(m) { marker.setMap(m); if (label) label.setMap(m); } };
     });
     closeInfo(); // 목록이 갱신되면 열려 있던 팝업은 닫는다
   }
@@ -236,7 +260,7 @@
     el.className = "pop-wrap";
     el.innerHTML = `<div class="pin-pop" style="--pc:${pinColor(r)}">
       <button type="button" class="pop-x" aria-label="${esc(t("close"))}">×</button>
-      <div class="pop-head"><span class="tag ${r.kind}">${kindName(r.kind)}</span> <b>${esc(r.note || t("descNone"))}</b></div>
+      <div class="pop-head"><span class="no">${t("reportNo", { n: r.report_no })}</span> <span class="tag ${r.kind}">${kindName(r.kind)}</span> <b>${esc(r.note || t("descNone"))}</b></div>
       <div class="row addr" data-addr="${r.id}">${addrHtml(r)}</div>
       <div class="row">${t("pinReport", { t: full(r.created_at) })}</div>
       ${r.reporter_phone4 ? `<div class="row">${t("pinPhone", { p: esc(r.reporter_phone4) })}</div>` : ""}
@@ -358,7 +382,7 @@
       if (d !== cur) { cur = d; html += `<div class="date">${d}</div>`; }
       html += `<div class="item" data-id="${r.id}">
         <div class="head">
-          <span><span class="tag ${r.kind}">${kindName(r.kind)}</span> ${esc(r.note || t("descNone"))}</span>
+          <span><span class="no">${t("reportNo", { n: r.report_no })}</span> <span class="tag ${r.kind}">${kindName(r.kind)}</span> ${esc(r.note || t("descNone"))}</span>
           <span class="tag ${r.done ? "done" : ""}" style="${r.done ? "" : "background:#868e96"}">${t(r.done ? "statusDone" : "statusNew")}</span>
         </div>
         <div class="addr" data-addr="${r.id}">${addrHtml(r)}</div>
@@ -479,9 +503,15 @@
   document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeLightbox(); });
 
   // 사진은 가이드를 열 때 그린다 (열지 않는 방문자는 사진을 내려받지 않는다)
+  $("optLabels").onchange = (e) => {
+    showLabels = e.target.checked;
+    try { localStorage.setItem("wasp_labels", showLabels ? "1" : "0"); } catch {}
+    renderMarkers();
+  };
   $("btnInfo").onclick = () => { renderInfo(); openModal("infoWrap"); };
   $("btnSettings").onclick = () => {
     document.querySelector(`input[name="lang"][value="${lang}"]`).checked = true;
+    $("optLabels").checked = showLabels;
     openModal("settingsWrap");
   };
   $("btnHelp").onclick = () => openModal("helpWrap");
