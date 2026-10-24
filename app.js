@@ -184,7 +184,7 @@
     info.open(map, marker);
     // 마커가 지도 위쪽에 있으면 팝업이 잘리므로, 마커가 지도 아래쪽 3분의 2 지점에 오도록 옮긴다
     const h = $("map").clientHeight, y = map.getProjection().containerPointFromCoords(marker.getPosition()).y;
-    const want = h * 0.7;
+    const want = Math.min(h - 30, Math.max(h * 0.7, 210)); // 팝업 높이(약 170~200px)만큼 위 공간 확보
     if (y < want) map.panBy(0, y - want);
   }
 
