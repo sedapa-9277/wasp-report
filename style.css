@@ -26,7 +26,10 @@ input[type=text]{width:100%;margin-top:4px;padding:10px;border:1px solid var(--l
 .btn.sub{background:var(--bg);color:var(--ink);border:1px solid var(--line)}
 .btn.link{background:none;color:var(--main);padding:4px}
 .btn.file{display:inline-block}
-#preview{display:block;max-width:100%;max-height:200px;margin-top:8px;border-radius:8px}
+.thumbs{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
+.thumbs img{width:96px;height:96px;object-fit:cover;border-radius:8px;display:block}
+.thumb{position:relative}
+.thumb button{position:absolute;top:-6px;right:-6px;width:22px;height:22px;border:0;border-radius:50%;background:#000a;color:#fff;font-size:14px;line-height:1;cursor:pointer}
 .date{font-size:13px;font-weight:700;color:var(--mute);margin:14px 0 6px}
 .item{border:1px solid var(--line);border-radius:10px;padding:10px;margin-bottom:8px}
 .item .head{display:flex;justify-content:space-between;gap:8px;align-items:center}

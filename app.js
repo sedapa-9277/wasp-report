@@ -8,7 +8,8 @@
     async req(path, opt = {}) {
       const res = await fetch(CFG.SUPABASE_URL + path, { ...opt, headers: this.h(opt.headers) });
       if (!res.ok) throw new Error(await res.text());
-      return res.status === 204 ? null : res.json();
+      const text = await res.text();
+      return text ? JSON.parse(text) : null;
     },
     all() { return this.req("/rest/v1/wasp_reports?select=*&order=created_at.desc&limit=500"); },
     async uploadPhoto(blob) {
@@ -43,7 +44,8 @@
   const KIND = { sighting: "벌 목격", nest: "벌집 위치" };
 
   // ---------- 상태 ----------
-  let map, pickMarker, picked = null, photoBlob = null, doneTarget = null, reports = [];
+  const MAX_PHOTOS = 3;
+  let map, pickMarker, picked = null, photos = [], doneTarget = null, reports = [];
   const markers = {};
 
   Store.visit().then((n) => { $("visit").textContent = `오늘 방문 ${n}명`; }).catch(() => { $("visit").textContent = ""; });
@@ -111,27 +113,47 @@
   };
 
   // ---------- 사진 (축소 후 업로드) ----------
-  function readPhoto(file) {
-    if (!file) return;
-    const img = new Image();
-    img.onload = () => {
-      const max = 1280, k = Math.min(1, max / Math.max(img.width, img.height));
-      const cv = document.createElement("canvas");
-      cv.width = Math.round(img.width * k); cv.height = Math.round(img.height * k);
-      cv.getContext("2d").drawImage(img, 0, 0, cv.width, cv.height);
-      cv.toBlob((b) => {
-        photoBlob = b;
-        $("preview").src = URL.createObjectURL(b); $("preview").hidden = false; $("photoClear").hidden = false;
-      }, "image/jpeg", 0.8);
-      URL.revokeObjectURL(img.src);
-    };
-    img.src = URL.createObjectURL(file);
+  function shrink(file) {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => {
+        const max = 1280, k = Math.min(1, max / Math.max(img.width, img.height));
+        const cv = document.createElement("canvas");
+        cv.width = Math.round(img.width * k); cv.height = Math.round(img.height * k);
+        cv.getContext("2d").drawImage(img, 0, 0, cv.width, cv.height);
+        URL.revokeObjectURL(img.src);
+        cv.toBlob((b) => (b ? resolve(b) : reject()), "image/jpeg", 0.8);
+      };
+      img.onerror = reject;
+      img.src = URL.createObjectURL(file);
+    });
   }
-  $("photoCam").onchange = (e) => readPhoto(e.target.files[0]);
-  $("photoGal").onchange = (e) => readPhoto(e.target.files[0]);
-  $("photoClear").onclick = () => {
-    photoBlob = null; $("preview").hidden = true; $("photoClear").hidden = true;
-    $("photoCam").value = ""; $("photoGal").value = "";
+
+  async function addPhotos(files) {
+    const room = MAX_PHOTOS - photos.length;
+    if (files.length > room) alert(`사진은 최대 ${MAX_PHOTOS}장까지 등록할 수 있습니다.`);
+    for (const f of files.slice(0, Math.max(room, 0))) {
+      try { const blob = await shrink(f); photos.push({ blob, url: URL.createObjectURL(blob) }); }
+      catch { alert("사진을 불러오지 못했습니다."); }
+    }
+    renderPhotos();
+  }
+
+  function renderPhotos() {
+    $("previews").innerHTML = photos.map((p, i) =>
+      `<div class="thumb"><img src="${p.url}" alt="사진 ${i + 1}"><button type="button" data-i="${i}" aria-label="사진 삭제">×</button></div>`).join("");
+    $("photoCount").textContent = photos.length ? `(${photos.length}/${MAX_PHOTOS})` : "";
+  }
+
+  function clearPhotos() {
+    photos.forEach((p) => URL.revokeObjectURL(p.url)); photos = []; renderPhotos();
+  }
+
+  $("photoCam").onchange = (e) => { addPhotos([...e.target.files]); e.target.value = ""; };
+  $("photoGal").onchange = (e) => { addPhotos([...e.target.files]); e.target.value = ""; };
+  $("previews").onclick = (e) => {
+    const b = e.target.closest("button[data-i]"); if (!b) return;
+    const [p] = photos.splice(+b.dataset.i, 1); URL.revokeObjectURL(p.url); renderPhotos();
   };
 
   // ---------- 신고 ----------
@@ -142,11 +164,11 @@
     if (!kind) return alert("벌 목격인지 벌집 위치인지 선택해 주세요.");
     const btn = e.submitter; btn.disabled = true;
     try {
-      const photo_url = photoBlob ? await Store.uploadPhoto(photoBlob) : null;
-      await Store.add({ kind: kind.value, lat: picked.lat, lng: picked.lng, note: $("note").value.trim() || null, photo_url });
+      const photo_urls = await Promise.all(photos.map((p) => Store.uploadPhoto(p.blob)));
+      await Store.add({ kind: kind.value, lat: picked.lat, lng: picked.lng, note: $("note").value.trim() || null, photo_urls });
     } catch { btn.disabled = false; return alert("신고 접수에 실패했습니다. 네트워크를 확인하고 다시 시도해 주세요."); }
     btn.disabled = false;
-    $("form").reset(); $("photoClear").onclick();
+    $("form").reset(); clearPhotos();
     picked = null; $("posText").textContent = "위치 미선택";
     if (pickMarker) { pickMarker.setMap(null); pickMarker = null; }
     await refresh();
@@ -167,7 +189,7 @@
           <span class="tag ${r.done ? "done" : ""}" style="${r.done ? "" : "background:#868e96"}">${r.done ? "처리완료" : "접수"}</span>
         </div>
         <div class="meta">${hm(new Date(r.created_at))} 신고</div>
-        ${r.photo_url ? `<img src="${esc(r.photo_url)}" alt="신고 사진" loading="lazy">` : ""}
+        ${r.photo_urls?.length ? `<div class="thumbs">${r.photo_urls.map((u) => `<a href="${esc(u)}" target="_blank" rel="noopener"><img src="${esc(u)}" alt="신고 사진" loading="lazy"></a>`).join("")}</div>` : ""}
         ${r.done ? `<div class="result">✔ ${esc(r.handler)} · ${full(r.done_at)}</div>` : ""}
         <div class="acts">
           ${map ? '<button class="btn sub" data-act="show">지도 보기</button>' : ""}

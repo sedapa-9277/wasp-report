@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>말벌 신고</title>
-<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="style.css?v=3">
 </head>
 <body>
 <header class="top">
@@ -34,13 +34,12 @@
         <input type="text" id="note" maxlength="100" placeholder="예) 전신주 12-345, ○○빌딩 뒤편">
       </label>
 
-      <div class="field">사진 <small>(선택)</small>
+      <div class="field">사진 <small>(선택, 최대 3장) <span id="photoCount"></span></small>
         <div class="row">
           <label class="btn sub file">📷 촬영<input type="file" id="photoCam" accept="image/*" capture="environment" hidden></label>
-          <label class="btn sub file">🖼 사진첩<input type="file" id="photoGal" accept="image/*" hidden></label>
-          <button type="button" id="photoClear" class="btn link" hidden>삭제</button>
+          <label class="btn sub file">🖼 사진첩<input type="file" id="photoGal" accept="image/*" multiple hidden></label>
         </div>
-        <img id="preview" alt="" hidden>
+        <div id="previews" class="thumbs"></div>
       </div>
 
       <button type="submit" class="btn main">신고 접수</button>
@@ -67,7 +66,7 @@
   </form>
 </div>
 
-<script src="config.js"></script>
-<script src="app.js"></script>
+<script src="config.js?v=3"></script>
+<script src="app.js?v=3"></script>
 </body>
 </html>
