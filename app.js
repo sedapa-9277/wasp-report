@@ -30,8 +30,10 @@
       const from = new Date(y, m - 1, d), to = new Date(y, m - 1, d + 1);
       return `&created_at=gte.${encodeURIComponent(from.toISOString())}&created_at=lt.${encodeURIComponent(to.toISOString())}`;
     },
-    page(n, day) {
-      return this.req(`/rest/v1/wasp_reports?select=${this.COLS}&order=created_at.desc${this.dayFilter(day)}`, {
+    // q: 전화번호 뒷자리 검색어(숫자만). 검색 중에는 날짜와 상관없이 전체에서 찾는다.
+    page(n, day, q) {
+      const filter = q ? `&reporter_phone4=like.*${q}*` : this.dayFilter(day);
+      return this.req(`/rest/v1/wasp_reports?select=${this.COLS}&order=created_at.desc${filter}`, {
         withCount: true, headers: { Range: `${n * PAGE_SIZE}-${n * PAGE_SIZE + PAGE_SIZE - 1}`, Prefer: "count=exact" },
       });
     },
@@ -107,6 +109,7 @@
   let map, pickMarker, picked = null, photos = [], doneTarget = null, locating = false, mapMsgKey = null, info = null;
   let rows = [], pins = [], total = 0, pageNo = 0;
   let day = ymd(new Date()); // 목록에 보여줄 날짜. ''이면 전체
+  let phoneQ = ""; // 전화번호 뒷자리 검색어. 있으면 날짜 대신 이것으로 목록을 거른다
   const markers = {};
   let mapFilter = "all"; // 지도에 보일 신고: all / pending / done
   let showLabels = true; // 마커 옆 신고·완료 일시 표시 (설정)
@@ -282,7 +285,7 @@
   // n: 이동할 페이지(0부터). 생략하면 현재 페이지를 다시 불러온다.
   async function refresh(n = pageNo) {
     try {
-      const [p, m, all, done] = await Promise.all([Store.page(n, day), Store.markers(), Store.count(), Store.count("&done=eq.true")]);
+      const [p, m, all, done] = await Promise.all([Store.page(n, day, phoneQ), Store.markers(), Store.count(), Store.count("&done=eq.true")]);
       stats.reports = all; stats.done = done; renderStats();
       // 마지막 페이지의 항목이 모두 사라진 경우(예: 삭제) 한 페이지 앞으로
       if (!p.data.length && n > 0 && p.total) return refresh(Math.ceil(p.total / PAGE_SIZE) - 1);
@@ -410,6 +413,7 @@
     sel.species = sel.count = sel.size = null; renderChips(); updateGroups();
     picked = null; renderPos();
     if (pickMarker) { pickMarker.setMap(null); pickMarker = null; }
+    if (phoneQ) setSearch("", false);
     if (day) setDay(ymd(new Date()), false); // 새 신고가 보이도록 오늘로 이동
     await refresh(0); // 새 신고는 첫 페이지 맨 위에 나온다
     notify(t("submitOk"));
@@ -417,9 +421,9 @@
 
   // ---------- 목록 (날짜별) ----------
   function renderList() {
-    $("count").textContent = t("countFmt", { day: day || t("allShort"), n: total });
+    $("count").textContent = phoneQ ? t("countSearch", { q: phoneQ, n: total }) : t("countFmt", { day: day || t("allShort"), n: total });
     renderPager();
-    if (!rows.length) { $("list").innerHTML = `<div class="empty">${t(day ? "emptyDay" : "emptyAll")}</div>`; return; }
+    if (!rows.length) { $("list").innerHTML = `<div class="empty">${t(phoneQ ? "emptySearch" : day ? "emptyDay" : "emptyAll")}</div>`; return; }
     let html = "", cur = "";
     for (const r of rows) {
       const d = ymd(new Date(r.created_at));
@@ -446,6 +450,7 @@
 
   // ---------- 날짜 선택 ----------
   function setDay(d, reload = true) {
+    if (reload && phoneQ) setSearch("", false); // 날짜를 바꾸면 검색을 끝내고 날짜별 보기로 돌아간다
     day = d; $("dayPick").value = d;
     const [y, m, dd] = (d || "").split("-").map(Number);
     $("dayText").textContent = d ? `${d} (${t("weekdays")[new Date(y, m - 1, dd).getDay()]})` : t("allRange");
@@ -467,6 +472,23 @@
   $("dayAll").onclick = () => setDay("");
   $("dayPick").onchange = (e) => { const tt = ymd(new Date()); setDay(e.target.value > tt ? tt : e.target.value); }; // 지우면 전체, 미래는 오늘로
   $("dayPick").onclick = (e) => { try { e.target.showPicker(); } catch {} }; // 글자 부분을 눌러도 달력이 열리게
+
+  // ---------- 전화번호 뒷자리 검색 ----------
+  function setSearch(q, reload = true) {
+    phoneQ = q;
+    if ($("phoneQ").value !== q) $("phoneQ").value = q;
+    $("phoneQClear").hidden = !q;
+    $("datebar").classList.toggle("dim", !!q); // 검색 중에는 날짜 선택이 적용되지 않음을 흐리게 표시
+    if (reload) refresh(0);
+  }
+  let searchTimer = null;
+  $("phoneQ").oninput = (e) => {
+    const q = e.target.value.replace(/\D/g, "").slice(0, 4); // 숫자만
+    e.target.value = q;
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(() => { if (q !== phoneQ) setSearch(q); }, 300); // 입력이 멈추면 검색
+  };
+  $("phoneQClear").onclick = () => { setSearch(""); $("phoneQ").focus(); };
 
   function renderPager() {
     const pages = Math.ceil(total / PAGE_SIZE);
@@ -567,15 +589,19 @@
     $("helpBody").innerHTML = t("helpDoc").map((s) => `<h4>${esc(s.h)}</h4><ul>${s.p.map((x) => `<li>${esc(x)}</li>`).join("")}</ul>`).join("");
   }
 
-  // 말벌 사진: Wikimedia Commons (각 사진의 작성자·라이선스를 사진 아래에 표시)
-  const cm = (path) => `https://upload.wikimedia.org/wikipedia/commons/thumb/${path}`;
+  // 말벌 사진: 한국어 위키백과 각 종 문서의 대표 사진(Wikimedia Commons). 작성자·라이선스를 사진 아래에 표시한다.
+  // file은 Commons 파일 이름을 URL 인코딩한 것, wiki는 참고한 한국어 위키백과 문서 제목
+  const cm = (path, file) => ({
+    src: `https://upload.wikimedia.org/wikipedia/commons/thumb/${path}/${file}/500px-${file}`,
+    page: `https://commons.wikimedia.org/wiki/File:${file}`,
+  });
   const WASP_IMG = {
-    mandarinia: { src: cm("9/94/Vespa_mandarinia_japonica.jpg/500px-Vespa_mandarinia_japonica.jpg"), file: "Vespa_mandarinia_japonica.jpg", by: "Michael J. Trout", lic: "CC BY-SA 4.0" },
-    velutina: { src: cm("c/cc/Asian_hornet_%28Vespa_velutina%29.jpg/500px-Asian_hornet_%28Vespa_velutina%29.jpg"), file: "Asian_hornet_(Vespa_velutina).jpg", by: "Charles J. Sharp", lic: "CC BY-SA 4.0" },
-    crabro: { src: cm("3/36/European_hornet_090621.jpg/500px-European_hornet_090621.jpg"), file: "European_hornet_090621.jpg", by: "Aconcagua", lic: "CC BY-SA 3.0" },
-    simillima: { src: cm("3/31/Vespa_simillima_xanthoptera01.jpg/500px-Vespa_simillima_xanthoptera01.jpg"), file: "Vespa_simillima_xanthoptera01.jpg", by: "Takahashi", lic: "CC BY-SA 3.0" },
-    analis: { src: cm("1/12/Vespa_analis_insularis.jpg/500px-Vespa_analis_insularis.jpg"), file: "Vespa_analis_insularis.jpg", by: "Toshihiro Gamo", lic: "CC BY 2.0" },
-    polistes: { src: cm("1/10/Paper_wasp_%28polistes_wattii%29.jpg/500px-Paper_wasp_%28polistes_wattii%29.jpg"), file: "Paper_wasp_(polistes_wattii).jpg", by: "Charles J. Sharp", lic: "CC BY-SA 3.0" },
+    mandarinia: { ...cm("8/8d", "20200512-P1100071_Vespa_mandarinia_japonica.jpg"), by: "Yasunori Koide", lic: "CC BY-SA 4.0", wiki: "장수말벌" },
+    velutina: { ...cm("c/c8", "Vespa_velutina_nigrithorax_MHNT_dos.jpg"), by: "Didier Descouens", lic: "CC BY-SA 4.0", wiki: "등검은말벌" },
+    crabro: { ...cm("f/fd", "Hornet-vespa.jpg"), by: "PiccoloNamek", lic: "CC BY-SA 3.0", wiki: "말벌" },
+    simillima: { ...cm("a/ab", "%E3%82%B1%E3%83%96%E3%82%AB%E3%82%B9%E3%82%BA%E3%83%A1%E3%83%90%E3%83%81_%2815357627266%29.jpg"), by: "harum.koh", lic: "CC BY-SA 2.0", wiki: "털보말벌" },
+    analis: { ...cm("0/0d", "Plumpy_hornet_on_the_ground_-_1.jpg"), by: "Kyu3", lic: "CC BY-SA 4.0", wiki: "좀말벌" },
+    polistes: { ...cm("c/c5", "Wasp_May_2008-11.jpg"), by: "Alvesgaspar", lic: "CC BY-SA 3.0", wiki: "쌍살벌" },
   };
 
   function renderInfo() {
@@ -583,8 +609,9 @@
     const wasps = () => t("waspList").map((w) => {
       const im = WASP_IMG[w.id];
       return `<div class="wasp"><div class="ph"><img src="${im.src}" alt="${esc(w.name)}" onerror="this.style.visibility='hidden'">
-        <small><a href="https://commons.wikimedia.org/wiki/File:${im.file}" target="_blank" rel="noopener">${esc(t("photoCredit"))}: ${esc(im.by)} · ${im.lic}</a></small></div>
-        <div class="tx"><b>${esc(w.name)}</b> <i>${esc(w.sci)}</i><p>${esc(w.desc)}</p></div></div>`;
+        <small><a href="${im.page}" target="_blank" rel="noopener">${esc(t("photoCredit"))}: ${esc(im.by)} · ${im.lic}</a></small></div>
+        <div class="tx"><b>${esc(w.name)}</b> <i>${esc(w.sci)}</i><p>${esc(w.desc)}</p>
+        <a class="wiki" href="https://ko.wikipedia.org/wiki/${encodeURIComponent(im.wiki)}" target="_blank" rel="noopener">${esc(t("moreWiki"))} ↗</a></div></div>`;
     }).join("");
     $("infoBody").innerHTML = t("infoSections").map((s) => s.species
       ? `<section class="info-sec"><h4>${esc(s.h)}</h4><p class="tip">${esc(s.tip)}</p>${wasps()}</section>`
