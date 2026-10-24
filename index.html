@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>말벌 신고</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="top">
+  <h1>🐝 말벌 위치 신고</h1>
+  <span class="visit" id="visit">오늘 방문 -</span>
+</header>
+
+<div id="map"><div class="map-msg" id="mapMsg">지도를 불러오는 중…</div></div>
+
+<main>
+  <section class="card">
+    <h2>신고하기</h2>
+    <p class="hint">지도를 눌러 위치를 찍거나, 아래 버튼으로 현재 위치를 사용하세요.</p>
+    <div class="row">
+      <button type="button" id="btnLocate" class="btn sub">📍 현위치 사용</button>
+      <span id="posText" class="pos">위치 미선택</span>
+    </div>
+
+    <form id="form">
+      <fieldset>
+        <legend>구분 <b class="req">필수</b></legend>
+        <label class="choice"><input type="radio" name="kind" value="sighting"> 벌 목격</label>
+        <label class="choice"><input type="radio" name="kind" value="nest"> 벌집 위치</label>
+      </fieldset>
+
+      <label class="field">위치 설명 <small>(선택)</small>
+        <input type="text" id="note" maxlength="100" placeholder="예) 전신주 12-345, ○○빌딩 뒤편">
+      </label>
+
+      <div class="field">사진 <small>(선택)</small>
+        <div class="row">
+          <label class="btn sub file">📷 촬영<input type="file" id="photoCam" accept="image/*" capture="environment" hidden></label>
+          <label class="btn sub file">🖼 사진첩<input type="file" id="photoGal" accept="image/*" hidden></label>
+          <button type="button" id="photoClear" class="btn link" hidden>삭제</button>
+        </div>
+        <img id="preview" alt="" hidden>
+      </div>
+
+      <button type="submit" class="btn main">신고 접수</button>
+    </form>
+  </section>
+
+  <section class="card">
+    <h2>신고 목록 <small id="count"></small></h2>
+    <div id="list"></div>
+  </section>
+</main>
+
+<div id="doneDialogWrap" class="modal" hidden>
+  <form id="doneForm" class="dialog">
+    <h3>처리 완료 입력</h3>
+    <label class="field">담당자(기관) <b class="req">필수</b>
+      <input type="text" id="handler" maxlength="40" placeholder="예) 수원남부소방서" required>
+    </label>
+    <p class="hint">처리 시간: <span id="doneTime"></span></p>
+    <div class="row">
+      <button type="button" id="doneCancel" class="btn sub">취소</button>
+      <button type="submit" class="btn main">처리 완료</button>
+    </div>
+  </form>
+</div>
+
+<script src="config.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
