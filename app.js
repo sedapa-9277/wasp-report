@@ -672,12 +672,15 @@
 
   // 상단 벌 애니메이션: 휴대폰에서는 잠자리채 구간의 오른쪽 끝을 버튼 묶음 바로 앞으로 맞추고,
   // 제목의 벌이 잠자리채 고리가 지나갈 자리(손잡이 끝 (3,38)에서 왼쪽 위 45° 방향으로 고리 중심까지 약 27.7px,
-  // 즉 44×40 그림 기준 (-16.6, 18.4))까지 날아가 맴돌다가, 고리가 지나가는 순간(54%) 사라지는 애니메이션을 픽셀 값으로 만든다.
+  // 즉 44×40 그림 기준 (-16.6, 18.4))까지 날아가 맴돌다가, 고리가 지나가는 순간 사라지는 애니메이션을 픽셀 값으로 만든다.
+  // 벌은 거리와 상관없이 초속 BEE_SPEED px 이하로 천천히 날고(넓은 화면일수록 한 주기가 길어짐),
+  // 잠자리채도 같은 주기로 JS에서 돌린다(CSS net-swing은 JS가 없을 때의 대체용).
   // CSS 키프레임 안의 var()는 브라우저에 따라 처음 값에 고정되므로, 크기가 바뀔 때마다 새로 만든다.
+  const BEE_SPEED = 100;
   const top = document.querySelector(".top"), hdrRight = document.querySelector(".hdr-right");
   const titleBee = document.querySelector(".title-bee"), beeScene = document.querySelector(".bee-scene");
   const tb = titleBee.querySelector(".tb"), net = beeScene.querySelector(".net");
-  let beeAnim = null;
+  let beeAnim = null, netAnim = null, beeKey = "";
   const placeBee = () => {
     top.style.setProperty("--bee-right", `${Math.ceil(top.getBoundingClientRect().right - hdrRight.getBoundingClientRect().left) + 2}px`);
     if (!tb.animate || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
@@ -685,17 +688,29 @@
     if (!s.width) return;
     const dx = Math.round(s.right - 44 - 16.6 - (b.left + b.width / 2));
     const dy = Math.round(s.top + s.height / 2 - 20 + 18.4 - (b.top + b.height / 2));
+    if (`${dx},${dy}` === beeKey) return; // 위치가 그대로면 진행 중인 애니메이션을 끊지 않는다
+    beeKey = `${dx},${dy}`;
+    // 시간(ms): 쉬기 480 → 비행 fly → 맴돌기 480 → 고리 통과(pass) → 잠자리채 복귀 2160 → 쉬기 600
+    const fly = Math.max(2280, Math.hypot(dx, dy) / BEE_SPEED * 1000);
+    const pass = 480 + fly + 480, total = pass + 2760, o = (ms) => ms / total;
     const at = (offset, x, y, sc, opacity) => ({ offset, transform: `translate(${x}px,${y}px) scale(${sc})`, opacity, easing: "ease-in-out" });
+    const rot = (offset, deg, easing = "ease-in-out") => ({ offset, transform: `rotate(${deg}deg)`, easing });
+    const timing = { duration: total, iterations: Infinity };
     if (beeAnim) beeAnim.cancel();
+    if (netAnim) netAnim.cancel();
     beeAnim = tb.animate([
-      at(0, 0, 0, 1, 1), at(0.08, 0, 0, 1, 1),
-      at(0.46, dx - 6, dy, 1, 1), at(0.535, dx, dy, 1, 1),
-      at(0.55, dx, dy, 0.3, 0), at(0.56, 0, 0, 1, 0),
-      at(0.93, 0, 0, 1, 0), at(1, 0, 0, 1, 1),
-    ], { duration: 6000, iterations: Infinity });
-    // 잠자리채(CSS 애니메이션)와 같은 박자로 맞춘다
-    const netAnim = net.getAnimations ? net.getAnimations()[0] : null;
-    if (netAnim && netAnim.currentTime != null) beeAnim.currentTime = netAnim.currentTime;
+      at(0, 0, 0, 1, 1), at(o(480), 0, 0, 1, 1),
+      at(o(480 + fly), dx - 6, dy, 1, 1), at(o(pass - 30), dx, dy, 1, 1),
+      at(o(pass + 60), dx, dy, 0.3, 0), at(o(pass + 120), 0, 0, 1, 0),
+      at(o(total - 420), 0, 0, 1, 0), at(1, 0, 0, 1, 1),
+    ], timing);
+    // 젖혀 들고 있다가 → 한 번 더 젖히고 → 왼쪽으로 반 바퀴(고리가 왼쪽 위 45°(-71deg)를 지날 때 벌이 사라짐) → 흔들림 → 제자리
+    net.style.animation = "none";
+    netAnim = net.animate([
+      rot(0, 25), rot(o(pass - 1080), 25), rot(o(pass - 600), 40, "ease-in"), rot(o(pass), -71, "ease-out"),
+      rot(o(pass + 360), -160), rot(o(pass + 600), -148), rot(o(pass + 840), -155), rot(o(pass + 1320), -155),
+      rot(o(pass + 2160), 25), rot(1, 25),
+    ], timing);
   };
   if (window.ResizeObserver) { const ro = new ResizeObserver(placeBee); [top, hdrRight, titleBee.parentNode].forEach((el) => ro.observe(el)); }
   addEventListener("resize", placeBee);
