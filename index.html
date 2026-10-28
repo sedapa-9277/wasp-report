@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>말벌 신고</title>
-<link rel="stylesheet" href="style.css?v=32">
+<link rel="stylesheet" href="style.css?v=33">
 </head>
 <body>
 <header class="top">
@@ -20,21 +20,18 @@
       <circle cx="19" cy="8.7" r=".7" fill="#fff"/>
     </svg></span></span> <span data-i18n="appName">말벌 위치 신고</span></h1>
   <div class="bee-scene" aria-hidden="true">
-    <svg class="net" viewBox="0 0 40 40" width="40" height="40">
-      <defs><clipPath id="hoopClip"><circle cx="14" cy="14" r="10.5"/></clipPath></defs>
+    <!-- 옆에서 본 잠자리채: 입구(고리)는 벌이 오는 왼쪽을 향하고, 그물 주머니는 휘두르는 방향의 반대(오른쪽)로 끌린다 -->
+    <svg class="net" viewBox="0 0 44 40" width="44" height="40">
       <!-- 손잡이 -->
-      <line x1="38.5" y1="38.5" x2="22" y2="22" stroke="rgba(0,0,0,.35)" stroke-width="4.6" stroke-linecap="round"/>
-      <line x1="38.5" y1="38.5" x2="22" y2="22" stroke="#8a5a2b" stroke-width="3.2" stroke-linecap="round"/>
+      <line x1="40" y1="38" x2="13" y2="25" stroke="rgba(0,0,0,.35)" stroke-width="4.6" stroke-linecap="round"/>
+      <line x1="40" y1="38" x2="13" y2="25" stroke="#8a5a2b" stroke-width="3.2" stroke-linecap="round"/>
       <!-- 그물 주머니 -->
-      <path d="M3.8 16.5 Q5 33 13 34 Q19 33 22.5 21" fill="rgba(255,255,255,.55)" stroke="rgba(0,0,0,.35)" stroke-width="2.4" stroke-linejoin="round"/>
-      <path d="M3.8 16.5 Q5 33 13 34 Q19 33 22.5 21" fill="rgba(255,255,255,.55)" stroke="#fff" stroke-width="1.2" stroke-linejoin="round"/>
-      <path d="M6 22 L20 25 M7.5 27.5 L18.5 29 M5.5 18 Q9 30 12.5 33.5 M10 18.5 Q12 29 15.5 33.5 M15 19 Q17 27 19 30" fill="none" stroke="#fff" stroke-width=".9" stroke-opacity=".95"/>
-      <!-- 고리 안 그물코 -->
-      <g clip-path="url(#hoopClip)" stroke="#fff" stroke-width=".8" stroke-opacity=".9">
-        <path d="M0 6 L28 34 M0 12 L22 34 M0 0 L34 34 M6 0 L34 28 M12 0 L34 22 M28 0 L0 28 M22 0 L0 22 M34 0 L0 34 M34 6 L6 34"/>
-      </g>
-      <circle cx="14" cy="14" r="10.5" fill="rgba(255,255,255,.2)" stroke="rgba(0,0,0,.35)" stroke-width="3.6"/>
-      <circle cx="14" cy="14" r="10.5" fill="none" stroke="#fff" stroke-width="2.4"/>
+      <path d="M12 3 Q30 3.5 37 19 Q31 25.5 12 25 Z" fill="rgba(255,255,255,.22)" stroke="rgba(0,0,0,.35)" stroke-width="2.4" stroke-linejoin="round"/>
+      <path d="M12 3 Q30 3.5 37 19 Q31 25.5 12 25 Z" fill="rgba(255,255,255,.22)" stroke="#fff" stroke-width="1.2" stroke-linejoin="round"/>
+      <path d="M18 3.6 Q20.5 14 18 25.2 M24 5 Q26.5 14.5 24 25 M30 8.5 Q32 15.5 30 23.5 M12 9.5 Q25 9 35.5 16.5 M12 17.5 Q25 19.5 36 20.5" fill="none" stroke="#fff" stroke-width=".9" stroke-opacity=".95"/>
+      <!-- 고리 (입구) -->
+      <ellipse cx="12" cy="14" rx="4.2" ry="11" fill="rgba(255,255,255,.2)" stroke="rgba(0,0,0,.35)" stroke-width="3.6"/>
+      <ellipse cx="12" cy="14" rx="4.2" ry="11" fill="none" stroke="#fff" stroke-width="2.4"/>
     </svg>
   </div>
   <div class="hdr-right">
@@ -197,8 +194,8 @@
   </div>
 </div>
 
-<script src="config.js?v=32"></script>
-<script src="i18n.js?v=32"></script>
-<script src="app.js?v=32"></script>
+<script src="config.js?v=33"></script>
+<script src="i18n.js?v=33"></script>
+<script src="app.js?v=33"></script>
 </body>
 </html>

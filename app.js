@@ -671,16 +671,33 @@
   }
 
   // 상단 벌 애니메이션: 휴대폰에서는 잠자리채 구간의 오른쪽 끝을 버튼 묶음 바로 앞으로 맞추고,
-  // 제목의 벌이 잠자리채 고리 중심(그림 40px 중 왼쪽 위 14px)까지 날아갈 거리를 정한다
+  // 제목의 벌이 잠자리채 입구 바로 안쪽(44×40 그림의 (19,14))까지 날아가는 애니메이션을 픽셀 값으로 만든다.
+  // CSS 키프레임 안의 var()는 브라우저에 따라 처음 값에 고정되므로, 크기가 바뀔 때마다 새로 만든다.
   const top = document.querySelector(".top"), hdrRight = document.querySelector(".hdr-right");
   const titleBee = document.querySelector(".title-bee"), beeScene = document.querySelector(".bee-scene");
+  const tb = titleBee.querySelector(".tb"), net = beeScene.querySelector(".net");
+  let beeAnim = null;
   const placeBee = () => {
     top.style.setProperty("--bee-right", `${Math.ceil(top.getBoundingClientRect().right - hdrRight.getBoundingClientRect().left) + 2}px`);
+    if (!tb.animate || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     const b = titleBee.getBoundingClientRect(), s = beeScene.getBoundingClientRect();
-    top.style.setProperty("--bee-dx", `${Math.round(s.right - 26 - (b.left + b.width / 2))}px`);
-    top.style.setProperty("--bee-dy", `${Math.round(s.top + s.height / 2 - 6 - (b.top + b.height / 2))}px`);
+    if (!s.width) return;
+    const dx = Math.round(s.right - 44 + 19 - (b.left + b.width / 2));
+    const dy = Math.round(s.top + s.height / 2 - 20 + 14 - (b.top + b.height / 2));
+    const at = (offset, x, y, sc, opacity) => ({ offset, transform: `translate(${x}px,${y}px) scale(${sc})`, opacity, easing: "ease-in-out" });
+    if (beeAnim) beeAnim.cancel();
+    beeAnim = tb.animate([
+      at(0, 0, 0, 1, 1), at(0.08, 0, 0, 1, 1),
+      at(0.5, dx - 18, dy, 1, 1), at(0.6, dx, dy, 0.75, 1),
+      at(0.66, dx, dy, 0.55, 1), at(0.86, dx, dy, 0.55, 1), at(0.92, dx, dy, 0.55, 0),
+      at(0.93, 0, 0, 1, 0), at(1, 0, 0, 1, 1),
+    ], { duration: 6000, iterations: Infinity });
+    // 잠자리채(CSS 애니메이션)와 같은 박자로 맞춘다
+    const netAnim = net.getAnimations ? net.getAnimations()[0] : null;
+    if (netAnim && netAnim.currentTime != null) beeAnim.currentTime = netAnim.currentTime;
   };
   if (window.ResizeObserver) { const ro = new ResizeObserver(placeBee); [top, hdrRight, titleBee.parentNode].forEach((el) => ro.observe(el)); }
+  addEventListener("resize", placeBee);
   placeBee();
 
   applyLang();
