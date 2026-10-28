@@ -17,20 +17,20 @@ body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,"Mal
 .title-bee .tb{display:block}
 .title-bee .bee-body{display:block;animation:bee-bob .35s ease-in-out infinite alternate}
 .title-bee .wing{transform-box:fill-box;transform-origin:50% 100%;animation:bee-flap .09s linear infinite alternate}
-/* 회전축은 손잡이 끝(40,38). 들고 있다가 왼쪽 아래로 휘둘러 입구로 벌을 받는다 */
-.bee-scene .net{position:absolute;right:0;top:50%;margin-top:-20px;transform-origin:91% 95%;animation:net-swing 6s ease-in-out infinite}
+/* 회전축은 손잡이 끝(3,38). 오른쪽으로 젖혀 들고 있다가 왼쪽 위로 휘둘러 입구로 벌을 받는다 */
+.bee-scene .net{position:absolute;right:0;top:50%;margin-top:-20px;transform-origin:7% 95%;animation:net-swing 6s ease-in-out infinite}
 @keyframes bee-bob{from{transform:translateY(-2.5px)}to{transform:translateY(2.5px)}}
 @keyframes bee-flap{from{transform:scaleY(1)}to{transform:scaleY(.35)}}
 @keyframes net-swing{
-  0%,52%{transform:rotate(35deg);opacity:1}
+  0%,52%{transform:rotate(25deg);opacity:1}
   62%{transform:rotate(-8deg)}
   66%{transform:rotate(0)}
   70%{transform:rotate(-6deg)}
   74%{transform:rotate(5deg)}
   78%{transform:rotate(-3deg)}
   82%,90%{transform:rotate(0);opacity:1}
-  97%{transform:rotate(35deg);opacity:0}
-  100%{transform:rotate(35deg);opacity:1}
+  97%{transform:rotate(25deg);opacity:0}
+  100%{transform:rotate(25deg);opacity:1}
 }
 @media(prefers-reduced-motion:reduce){
   .title-bee .bee-body,.title-bee .wing,.bee-scene .net{animation:none}
