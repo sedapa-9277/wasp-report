@@ -671,7 +671,8 @@
   }
 
   // 상단 벌 애니메이션: 휴대폰에서는 잠자리채 구간의 오른쪽 끝을 버튼 묶음 바로 앞으로 맞추고,
-  // 제목의 벌이 잠자리채 입구 바로 안쪽(44×40 그림의 (25,14))까지 날아가는 애니메이션을 픽셀 값으로 만든다.
+  // 제목의 벌이 잠자리채 고리가 지나갈 자리(손잡이 끝 (3,38)에서 왼쪽 위 45° 방향으로 고리 중심까지 약 27.7px,
+  // 즉 44×40 그림 기준 (-16.6, 18.4))까지 날아가 맴돌다가, 고리가 지나가는 순간(54%) 사라지는 애니메이션을 픽셀 값으로 만든다.
   // CSS 키프레임 안의 var()는 브라우저에 따라 처음 값에 고정되므로, 크기가 바뀔 때마다 새로 만든다.
   const top = document.querySelector(".top"), hdrRight = document.querySelector(".hdr-right");
   const titleBee = document.querySelector(".title-bee"), beeScene = document.querySelector(".bee-scene");
@@ -682,14 +683,14 @@
     if (!tb.animate || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     const b = titleBee.getBoundingClientRect(), s = beeScene.getBoundingClientRect();
     if (!s.width) return;
-    const dx = Math.round(s.right - 44 + 25 - (b.left + b.width / 2));
-    const dy = Math.round(s.top + s.height / 2 - 20 + 14 - (b.top + b.height / 2));
+    const dx = Math.round(s.right - 44 - 16.6 - (b.left + b.width / 2));
+    const dy = Math.round(s.top + s.height / 2 - 20 + 18.4 - (b.top + b.height / 2));
     const at = (offset, x, y, sc, opacity) => ({ offset, transform: `translate(${x}px,${y}px) scale(${sc})`, opacity, easing: "ease-in-out" });
     if (beeAnim) beeAnim.cancel();
     beeAnim = tb.animate([
       at(0, 0, 0, 1, 1), at(0.08, 0, 0, 1, 1),
-      at(0.5, dx - 18, dy, 1, 1), at(0.6, dx, dy, 0.75, 1),
-      at(0.66, dx, dy, 0.55, 1), at(0.86, dx, dy, 0.55, 1), at(0.92, dx, dy, 0.55, 0),
+      at(0.46, dx - 6, dy, 1, 1), at(0.535, dx, dy, 1, 1),
+      at(0.55, dx, dy, 0.3, 0), at(0.56, 0, 0, 1, 0),
       at(0.93, 0, 0, 1, 0), at(1, 0, 0, 1, 1),
     ], { duration: 6000, iterations: Infinity });
     // 잠자리채(CSS 애니메이션)와 같은 박자로 맞춘다
