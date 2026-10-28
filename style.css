@@ -10,6 +10,45 @@ body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,"Mal
 #map{z-index:0} /* 지도 내부 요소가 고정된 상단 메뉴 위로 올라오지 않도록 쌓임 맥락을 분리 */
 #map,.card,#list{scroll-margin-top:64px} /* 스크롤 이동 시 고정 메뉴에 가리지 않게 */
 
+/* 제목 옆 장식: 제목의 벌이 오른쪽으로 날아가 잠자리채에 잡혔다가 제자리로 돌아온다 (6초 반복)
+   날아갈 거리(--bee-dx/--bee-dy)는 벌과 잠자리채 고리 위치로 app.js가 정한다 */
+.bee-scene{position:relative;flex:1 1 auto;align-self:stretch;min-width:48px;max-width:260px;margin:0 4px;overflow:visible;pointer-events:none}
+.title-bee{display:inline-block;width:24px;height:18px;vertical-align:-3px}
+.title-bee .tb{display:block;animation:bee-fly 6s ease-in-out infinite}
+.title-bee .bee-body{display:block;animation:bee-bob .35s ease-in-out infinite alternate}
+.title-bee .wing{transform-box:fill-box;transform-origin:50% 100%;animation:bee-flap .09s linear infinite alternate}
+.bee-scene .net{position:absolute;right:0;top:50%;margin-top:-20px;transform-origin:94% 94%;animation:net-swing 6s ease-in-out infinite}
+@keyframes bee-fly{
+  0%,8%{transform:translate(0,0) scale(1);opacity:1}
+  50%{transform:translate(calc(var(--bee-dx,0px) - 16px),var(--bee-dy,0px)) scale(1)}
+  60%{transform:translate(var(--bee-dx,0px),var(--bee-dy,0px)) scale(.75)}
+  66%,86%{transform:translate(var(--bee-dx,0px),var(--bee-dy,0px)) scale(.55);opacity:1}
+  92%{transform:translate(var(--bee-dx,0px),var(--bee-dy,0px)) scale(.55);opacity:0}
+  93%{transform:translate(0,0) scale(1);opacity:0}
+  100%{transform:translate(0,0) scale(1);opacity:1}
+}
+@keyframes bee-bob{from{transform:translateY(-2.5px)}to{transform:translateY(2.5px)}}
+@keyframes bee-flap{from{transform:scaleY(1)}to{transform:scaleY(.35)}}
+@keyframes net-swing{
+  0%,52%{transform:rotate(45deg);opacity:1}
+  62%{transform:rotate(-8deg)}
+  66%{transform:rotate(0)}
+  70%{transform:rotate(-6deg)}
+  74%{transform:rotate(5deg)}
+  78%{transform:rotate(-3deg)}
+  82%,90%{transform:rotate(0);opacity:1}
+  97%{transform:rotate(45deg);opacity:0}
+  100%{transform:rotate(45deg);opacity:1}
+}
+@media(prefers-reduced-motion:reduce){
+  .title-bee .tb,.title-bee .bee-body,.title-bee .wing,.bee-scene .net{animation:none}
+}
+/* 휴대폰: 제목과 버튼 사이가 좁으므로 벌이 제목 글자 위를 지나 버튼 바로 앞에서 잡히게 한다.
+   오른쪽 끝(--bee-right)은 버튼 묶음 폭에 맞춰 app.js가 정한다(언어에 따라 버튼 폭이 달라짐) */
+@media(max-width:480px){
+  .bee-scene{position:absolute;left:34px;right:var(--bee-right,170px);top:0;bottom:0;margin:0;min-width:0;max-width:none;z-index:1}
+}
+
 /* 하단 탭: 좁은 화면(한 칸 배치)에서만 */
 .tabbar{display:none}
 @media(max-width:899px){

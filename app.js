@@ -670,6 +670,19 @@
     applyLang();
   }
 
+  // 상단 벌 애니메이션: 휴대폰에서는 잠자리채 구간의 오른쪽 끝을 버튼 묶음 바로 앞으로 맞추고,
+  // 제목의 벌이 잠자리채 고리 중심(그림 40px 중 왼쪽 위 14px)까지 날아갈 거리를 정한다
+  const top = document.querySelector(".top"), hdrRight = document.querySelector(".hdr-right");
+  const titleBee = document.querySelector(".title-bee"), beeScene = document.querySelector(".bee-scene");
+  const placeBee = () => {
+    top.style.setProperty("--bee-right", `${Math.ceil(top.getBoundingClientRect().right - hdrRight.getBoundingClientRect().left) + 2}px`);
+    const b = titleBee.getBoundingClientRect(), s = beeScene.getBoundingClientRect();
+    top.style.setProperty("--bee-dx", `${Math.round(s.right - 26 - (b.left + b.width / 2))}px`);
+    top.style.setProperty("--bee-dy", `${Math.round(s.top + s.height / 2 - 6 - (b.top + b.height / 2))}px`);
+  };
+  if (window.ResizeObserver) { const ro = new ResizeObserver(placeBee); [top, hdrRight, titleBee.parentNode].forEach((el) => ro.observe(el)); }
+  placeBee();
+
   applyLang();
   refresh();
   loadMap();
